@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SUCCESS_OPERATION" xml:space="preserve"><value>Thao tác thành công</value></data>
+  <data name="ERR_VALIDATION_FAILED" xml:space="preserve"><value>Dữ liệu đầu vào không hợp lệ</value></data>
+  <data name="ERR_TITLE_REQUIRED" xml:space="preserve"><value>Tiêu đề di sản không được để trống</value></data>
+  <data name="ERR_CONTEXT_REQUIRED" xml:space="preserve"><value>Bối cảnh lịch sử không được để trống</value></data>
+  <data name="ERR_LOCATION_REQUIRED" xml:space="preserve"><value>LocationId không được để trống</value></data>
+  <data name="ERR_AUTHOR_REQUIRED" xml:space="preserve"><value>AuthorId không được để trống</value></data>
+  <data name="ERR_DOCUMENT_NOT_FOUND" xml:space="preserve"><value>Không tìm thấy dữ liệu</value></data>
+  <data name="ERR_INTERNAL_SERVER" xml:space="preserve"><value>Lỗi máy chủ cục bộ</value></data>
+  <data name="ERR_UNKNOWN" xml:space="preserve"><value>Lỗi không xác định</value></data>
+  <data name="ERR_BAD_REQUEST" xml:space="preserve"><value>Yêu cầu không hợp lệ</value></data>
+</root>

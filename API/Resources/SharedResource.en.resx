@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SUCCESS_OPERATION" xml:space="preserve"><value>Operation successful</value></data>
+  <data name="ERR_VALIDATION_FAILED" xml:space="preserve"><value>Validation failed</value></data>
+  <data name="ERR_TITLE_REQUIRED" xml:space="preserve"><value>Heritage title is required</value></data>
+  <data name="ERR_CONTEXT_REQUIRED" xml:space="preserve"><value>Historical context is required</value></data>
+  <data name="ERR_LOCATION_REQUIRED" xml:space="preserve"><value>LocationId is required</value></data>
+  <data name="ERR_AUTHOR_REQUIRED" xml:space="preserve"><value>AuthorId is required</value></data>
+  <data name="ERR_DOCUMENT_NOT_FOUND" xml:space="preserve"><value>Document not found</value></data>
+  <data name="ERR_INTERNAL_SERVER" xml:space="preserve"><value>Internal server error</value></data>
+  <data name="ERR_UNKNOWN" xml:space="preserve"><value>Unknown error</value></data>
+  <data name="ERR_BAD_REQUEST" xml:space="preserve"><value>Bad request</value></data>
+</root>
