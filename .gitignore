@@ -81,3 +81,9 @@ appsettings.Production.json
 *.mdf
 *.ldf
 *.ndf
+
+# Local uploaded files
+shared_uploads/
+
+# Local agent files
+.agents

@@ -5,6 +5,7 @@ using FastEndpoints;
 using Infrastructure.Persistence.MongoDb;
 using Infrastructure.Persistence.Queries;
 using Infrastructure.Persistence.SqlServer;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,12 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddHttpContextAccessor();
         services.AddLocalization(options => options.ResourcesPath = "Resources");
+        services.AddSignalR();
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+            options.InstanceName = "VietHeritagePedia_";
+        });
         return services;
     }
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IConfiguration configuration)
@@ -54,6 +61,9 @@ public static class DependencyInjection
         services.AddScoped<ILocationQueryService, LocationQueryService>();
         services.AddScoped<IHeritageQueryService, HeritageQueryService>();
 
+        // Register File Storage Service
+        services.AddScoped<Application.Interfaces.Storage.IFileStorageService, Infrastructure.Storage.LocalFileStorageService>();
+
         // 2. MongoDB Configuration
         services.Configure<MongoDbSettings>(configuration.GetSection("MongoDbSettings"));
         services.AddSingleton<MongoDbContext>();
@@ -63,6 +73,27 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(Result).Assembly);
+        });
+
+        // 4. MassTransit + RabbitMQ Configuration
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumer<Consumers.DocumentChunkProcessedConsumer>();
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var rabbitHost = configuration["RabbitMQ:Host"] ?? "localhost";
+                var rabbitUser = configuration["RabbitMQ:Username"] ?? "guest";
+                var rabbitPass = configuration["RabbitMQ:Password"] ?? "guest";
+
+                cfg.Host(rabbitHost, "/", h =>
+                {
+                    h.Username(rabbitUser);
+                    h.Password(rabbitPass);
+                });
+
+                cfg.ConfigureEndpoints(context);
+            });
         });
 
         return services;

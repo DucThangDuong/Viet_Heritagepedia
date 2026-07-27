@@ -22,4 +22,10 @@
   <data name="ERR_INTERNAL_SERVER" xml:space="preserve"><value>Lỗi máy chủ cục bộ</value></data>
   <data name="ERR_UNKNOWN" xml:space="preserve"><value>Lỗi không xác định</value></data>
   <data name="ERR_BAD_REQUEST" xml:space="preserve"><value>Yêu cầu không hợp lệ</value></data>
+  <data name="ERR_FILE_REQUIRED" xml:space="preserve"><value>Vui lòng đính kèm file tài liệu</value></data>
+  <data name="ERR_INVALID_FILE_TYPE" xml:space="preserve"><value>Định dạng file không được hỗ trợ (chỉ hỗ trợ PDF, DOCX)</value></data>
+  <data name="ERR_INVALID_FILE_SIGNATURE" xml:space="preserve"><value>File giả mạo hoặc nội dung không đúng chữ ký định dạng</value></data>
+  <data name="ERR_TITLE_MIN_LENGTH" xml:space="preserve"><value>Tiêu đề di sản phải có ít nhất 5 ký tự</value></data>
+  <data name="ERR_TITLE_MAX_LENGTH" xml:space="preserve"><value>Tiêu đề di sản không được vượt quá 200 ký tự</value></data>
+  <data name="ERR_CONTEXT_MIN_LENGTH" xml:space="preserve"><value>Bối cảnh lịch sử phải có ít nhất 20 ký tự</value></data>
 </root>

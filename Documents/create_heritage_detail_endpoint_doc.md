@@ -2,19 +2,21 @@
 
 ## 1. Overview
 
-| Property | Details |
-| :--- | :--- |
-| **Endpoint URL** | `/api/heritage-details` |
-| **HTTP Method** | `POST` |
-| **Architectural Pattern** | REPR (Request-Endpoint-Response) via FastEndpoints |
-| **Summary** | Stores rich heritage detail documents (Type 2 Community Articles) in MongoDB and persists transactional metadata into SQL Server. |
-| **Description** | Validates incoming payloads via FluentValidation pipeline behaviors, creates an unstructured BSON document in MongoDB, persists SQL metadata via `ContributionRepository` + `UnitOfWork`, and queues transactional outbox messages for async event handling. |
+
+| Property                  | Details                                                                                                                                                                                                                                                     |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Endpoint URL**          | `/api/heritage-details`                                                                                                                                                                                                                                     |
+| **HTTP Method**           | `POST`                                                                                                                                                                                                                                                      |
+| **Architectural Pattern** | REPR (Request-Endpoint-Response) via FastEndpoints                                                                                                                                                                                                          |
+| **Summary**               | Stores rich heritage detail documents (Type 2 Community Articles) in MongoDB and persists transactional metadata into SQL Server.                                                                                                                           |
+| **Description**           | Validates incoming payloads via FluentValidation pipeline behaviors, creates an unstructured BSON document in MongoDB, persists SQL metadata via`ContributionRepository` + `UnitOfWork`, and queues transactional outbox messages for async event handling. |
 
 ---
 
 ## 2. Request Contract (`CreateHeritageDetailCommand`)
 
 ### JSON Request Payload Example
+
 ```json
 {
   "title": "Hoàng Thành Thăng Long - Kiến Trúc Cung Điện Qua Các Thời Kỳ",
@@ -35,15 +37,16 @@
 
 ### Request Fields Breakdown
 
-| Field Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `title` | `string` | **Yes** | Title of the heritage contribution article. |
-| `historicalContext` | `string` | **Yes** | Detailed historical context narrative. |
-| `architectureDetails` | `string` | No | Architectural description and structural details. |
-| `imageUrls` | `string[]` | No | List of image URLs related to the heritage item. |
-| `attributes` | `object` (Key-Value) | No | Custom attributes or key-value metadata. |
-| `locationId` | `string` (UUID) | **Yes** | GUID referencing the target `Location` in SQL Server. |
-| `authorId` | `string` (UUID) | **Yes** | GUID referencing the `User` authoring the contribution. |
+
+| Field Name            | Type                 | Required | Description                                            |
+| :---------------------- | :--------------------- | :--------- | :------------------------------------------------------- |
+| `title`               | `string`             | **Yes**  | Title of the heritage contribution article.            |
+| `historicalContext`   | `string`             | **Yes**  | Detailed historical context narrative.                 |
+| `architectureDetails` | `string`             | No       | Architectural description and structural details.      |
+| `imageUrls`           | `string[]`           | No       | List of image URLs related to the heritage item.       |
+| `attributes`          | `object` (Key-Value) | No       | Custom attributes or key-value metadata.               |
+| `locationId`          | `string` (UUID)      | **Yes**  | GUID referencing the target`Location` in SQL Server.   |
+| `authorId`            | `string` (UUID)      | **Yes**  | GUID referencing the`User` authoring the contribution. |
 
 ---
 
@@ -83,23 +86,23 @@ sequenceDiagram
 
     Client->>EP: POST /api/heritage-details (JSON Payload)
     EP->>Pipe: Dispatch CreateHeritageDetailCommand
-    
+  
     alt Validation Failure
         Pipe-->>EP: ValidationException (400)
         EP-->>Client: 400 Bad Request (ApiErrorResponse)
     else Validation Success
         Pipe->>CmdH: Handle(Command, CancellationToken)
-        
+      
         Note over CmdH, Mongo: 1. Store Unstructured Rich Document
         CmdH->>Mongo: InsertAsync(HeritageDetailDocument)
         Mongo-->>CmdH: Generated Mongo Document ID (ObjectId)
-        
+      
         Note over CmdH, SQL: 2. Store SQL Metadata & Outbox Event
         CmdH->>SQL: AddAsync(Contribution metadata with NoSqlDocumentId)
         CmdH->>SQL: AddOutboxMessage(ContributionCreatedEvent)
         CmdH->>SQL: SaveChangesAsync() (SQL Transaction)
         SQL-->>CmdH: Transaction Committed
-        
+      
         CmdH-->>Pipe: Result<Guid>.Success(ContributionId, 201)
         Pipe-->>EP: Result<Guid>
         EP-->>Client: 201 Created (ApiSuccessResponse with Contribution GUID)

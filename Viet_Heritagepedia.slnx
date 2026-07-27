@@ -3,4 +3,5 @@
   <Project Path="Application/Application.csproj" Id="c1f5fccf-5d3f-4808-8c8c-0946ceb097c4" />
   <Project Path="Domain/Domain.csproj" Id="a0039e95-50f0-4565-ab1b-2a2a1fc2e293" />
   <Project Path="Infrastructure/Infrastructure.csproj" Id="0f9e01a9-ea60-4caa-8f59-2001ce7d5e77" />
+  <Project Path="UnitTest/UnitTest.csproj" Id="e12f8631-e5f6-4048-a605-50c3e8b9d26b" />
 </Solution>

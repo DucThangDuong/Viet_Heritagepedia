@@ -14,10 +14,13 @@ public class CreateHeritageDetailValidator : Validator<CreateHeritageDetailComma
     public CreateHeritageDetailValidator()
     {
         RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("ERR_TITLE_REQUIRED");
+            .NotEmpty().WithMessage("ERR_TITLE_REQUIRED")
+            .MinimumLength(5).WithMessage("ERR_TITLE_MIN_LENGTH")
+            .MaximumLength(200).WithMessage("ERR_TITLE_MAX_LENGTH");
 
         RuleFor(x => x.HistoricalContext)
-            .NotEmpty().WithMessage("ERR_CONTEXT_REQUIRED");
+            .NotEmpty().WithMessage("ERR_CONTEXT_REQUIRED")
+            .MinimumLength(20).WithMessage("ERR_CONTEXT_MIN_LENGTH");
 
         RuleFor(x => x.LocationId)
             .NotEmpty().WithMessage("ERR_LOCATION_REQUIRED");

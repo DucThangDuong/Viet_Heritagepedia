@@ -1,0 +1,793 @@
+{
+    "x-generator": "NSwag v14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))",
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Viet Heritagepedia API",
+        "description": "Hệ thống Backend Viet Heritagepedia - Quản lý di sản văn hóa Việt Nam.",
+        "version": "v1"
+    },
+    "servers": [
+        {
+            "url": "https://localhost:7130"
+        }
+    ],
+    "paths": {
+        "/api/locations": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Create a new Location in SQL Server",
+                "description": "Validates input via FluentValidation and dispatches CreateLocationCommand via MediatR",
+                "operationId": "APIEndpointsLocationsCreateLocationEndpoint",
+                "requestBody": {
+                    "x-name": "CreateLocationCommand",
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApplicationFeaturesLocationsCommandsCreateLocationCommand"
+                            }
+                        }
+                    },
+                    "required": true,
+                    "x-position": 1
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApplicationDTOsLocationResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/locations/{id}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get location by ID using ILocationQueryService",
+                "description": "Read-only query fetched via ILocationQueryService returning DTO directly",
+                "operationId": "APIEndpointsLocationsGetLocationEndpoint",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "guid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApplicationDTOsLocationResponseDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/locations/nearby": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get active locations within radius with pending contributions count",
+                "description": "Validates input via FluentValidation and executes read-only query service",
+                "operationId": "APIEndpointsLocationsGetNearbyLocationsEndpoint",
+                "parameters": [
+                    {
+                        "name": "latitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "double"
+                        }
+                    },
+                    {
+                        "name": "longitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "double"
+                        }
+                    },
+                    {
+                        "name": "radiusInKm",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "double"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ApplicationDTOsNearbyLocationDto"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/heritage-details": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Create rich heritage detail document in MongoDB and store metadata in SQL Server",
+                "description": "Validates input via FluentValidation and dispatches CreateHeritageDetailCommand via MediatR",
+                "operationId": "APIEndpointsHeritageCreateHeritageDetailEndpoint",
+                "requestBody": {
+                    "x-name": "CreateHeritageDetailCommand",
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApplicationFeaturesHeritageCommandsCreateHeritageDetailCommand"
+                            }
+                        }
+                    },
+                    "required": true,
+                    "x-position": 1
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "guid"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/heritage-details/{slug}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get aggregated heritage detail (SQL + MongoDB)",
+                "description": "Read-only query service for combined SQL metadata and MongoDB rich documents",
+                "operationId": "APIEndpointsHeritageGetHeritageDetailEndpoint",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApplicationDTOsHeritageDetailDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/documents/upload": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Upload PDF/DOCX document with Magic Bytes validation & dispatch conversion command via MassTransit",
+                "description": "Validates file header signature (magic bytes), saves uploaded document via IFileStorageService, emits ConvertDocumentToJsonCommand to RabbitMQ, and returns JobId for WebSocket tracking.",
+                "operationId": "APIEndpointsDocumentsUploadDocumentEndpoint",
+                "requestBody": {
+                    "x-name": "UploadDocumentRequest",
+                    "description": "",
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/APIEndpointsDocumentsUploadDocumentRequest"
+                            }
+                        }
+                    },
+                    "required": true,
+                    "x-position": 1
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIEndpointsDocumentsUploadDocumentResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user-articles/{id}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get rich user article document with JSON blocks from MongoDB",
+                "description": "Returns structured JSON blocks (quotes, timeline, text nodes) for article rendering",
+                "operationId": "APIEndpointsArticlesGetUserArticleEndpoint",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApplicationDTOsUserArticleDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ApplicationDTOsLocationResponseDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "guid"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "vietnameseName": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "category": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "region": {
+                        "type": "string"
+                    },
+                    "province": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "isPlainRegion": {
+                        "type": "boolean"
+                    },
+                    "coverImageUrl": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "isFeatured": {
+                        "type": "boolean"
+                    },
+                    "unescoYear": {
+                        "type": "integer",
+                        "format": "int32",
+                        "nullable": true
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                }
+            },
+            "FastEndpointsErrorResponse": {
+                "type": "object",
+                "description": "the dto used to send an error response to the client",
+                "additionalProperties": false,
+                "properties": {
+                    "statusCode": {
+                        "type": "integer",
+                        "description": "the http status code sent to the client. default is 400.",
+                        "format": "int32",
+                        "default": 400
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "the message for the error response",
+                        "default": "One or more errors occurred!"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "description": "the collection of errors for the current context",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "ApplicationFeaturesLocationsCommandsCreateLocationCommand": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "nullable": false
+                    },
+                    "slug": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "vietnameseName": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "category": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0.0,
+                        "exclusiveMinimum": true
+                    },
+                    "region": {
+                        "type": "string"
+                    },
+                    "province": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "isPlainRegion": {
+                        "type": "boolean"
+                    },
+                    "coverImageUrl": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "isFeatured": {
+                        "type": "boolean"
+                    },
+                    "unescoYear": {
+                        "type": "integer",
+                        "format": "int32",
+                        "nullable": true
+                    }
+                }
+            },
+            "ApplicationDTOsNearbyLocationDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "guid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "pendingContributionsCount": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ApplicationDTOsGetNearbyLocationsRequest": {
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ApplicationFeaturesHeritageCommandsCreateHeritageDetailCommand": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "title",
+                    "historicalContext",
+                    "locationId",
+                    "authorId"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 5,
+                        "nullable": false
+                    },
+                    "historicalContext": {
+                        "type": "string",
+                        "minLength": 20,
+                        "nullable": false
+                    },
+                    "architectureDetails": {
+                        "type": "string"
+                    },
+                    "imageUrls": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "attributes": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "locationId": {
+                        "type": "string",
+                        "format": "guid",
+                        "minLength": 1,
+                        "nullable": false
+                    },
+                    "authorId": {
+                        "type": "string",
+                        "format": "guid",
+                        "minLength": 1,
+                        "nullable": false
+                    }
+                }
+            },
+            "ApplicationDTOsHeritageDetailDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "vietnameseTitle": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "categoryName": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "region": {
+                        "type": "string"
+                    },
+                    "unescoYear": {
+                        "type": "integer",
+                        "format": "int32",
+                        "nullable": true
+                    },
+                    "image": {
+                        "type": "string"
+                    },
+                    "featured": {
+                        "type": "boolean"
+                    },
+                    "coordinates": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ApplicationDTOsGeoCoordinatesDto"
+                            }
+                        ]
+                    },
+                    "shortDescription": {
+                        "type": "string"
+                    },
+                    "leadQuote": {
+                        "type": "string"
+                    },
+                    "fullDescription": {
+                        "type": "string"
+                    },
+                    "quote": {
+                        "type": "string"
+                    },
+                    "galleryImages": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "highlights": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "historicalEra": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "timeline": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApplicationDTOsTimelineNodeDto"
+                        }
+                    },
+                    "practicalInfo": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ApplicationDTOsPracticalInfoDto"
+                            }
+                        ]
+                    },
+                    "communityArticles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApplicationDTOsCommunityArticleDto"
+                        }
+                    }
+                }
+            },
+            "ApplicationDTOsGeoCoordinatesDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "lat": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "lng": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "geoCode": {
+                        "type": "string"
+                    },
+                    "zoom": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ApplicationDTOsTimelineNodeDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "year": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ApplicationDTOsPracticalInfoDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "openingHours": {
+                        "type": "string"
+                    },
+                    "admissionFee": {
+                        "type": "string"
+                    },
+                    "dressCode": {
+                        "type": "string"
+                    },
+                    "guidedTours": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ApplicationDTOsCommunityArticleDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "likesCount": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "createdAt": {
+                        "type": "string"
+                    },
+                    "authorName": {
+                        "type": "string"
+                    },
+                    "authorAvatar": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "contentHtml": {
+                        "type": "string"
+                    },
+                    "blocks": {
+                        "nullable": true
+                    }
+                }
+            },
+            "APIEndpointsDocumentsUploadDocumentResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "format": "guid"
+                    },
+                    "fileName": {
+                        "type": "string"
+                    },
+                    "webSocketUrl": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "APIEndpointsDocumentsUploadDocumentRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                }
+            },
+            "ApplicationDTOsUserArticleDto": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "heritageId": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "authorName": {
+                        "type": "string"
+                    },
+                    "authorRole": {
+                        "type": "string"
+                    },
+                    "authorAvatar": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "createdAt": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "contentHtml": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "blocks": {
+                        "nullable": true
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "likesCount": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "JWTBearerAuth": {
+                "type": "http",
+                "description": "Enter a JWT token to authorize the requests...",
+                "scheme": "Bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}

@@ -22,4 +22,10 @@
   <data name="ERR_INTERNAL_SERVER" xml:space="preserve"><value>Internal server error</value></data>
   <data name="ERR_UNKNOWN" xml:space="preserve"><value>Unknown error</value></data>
   <data name="ERR_BAD_REQUEST" xml:space="preserve"><value>Bad request</value></data>
+  <data name="ERR_FILE_REQUIRED" xml:space="preserve"><value>Document file is required</value></data>
+  <data name="ERR_INVALID_FILE_TYPE" xml:space="preserve"><value>Unsupported file type (only PDF, DOCX allowed)</value></data>
+  <data name="ERR_INVALID_FILE_SIGNATURE" xml:space="preserve"><value>Invalid or spoofed file signature</value></data>
+  <data name="ERR_TITLE_MIN_LENGTH" xml:space="preserve"><value>Title must be at least 5 characters long</value></data>
+  <data name="ERR_TITLE_MAX_LENGTH" xml:space="preserve"><value>Title cannot exceed 200 characters</value></data>
+  <data name="ERR_CONTEXT_MIN_LENGTH" xml:space="preserve"><value>Historical context must be at least 20 characters long</value></data>
 </root>

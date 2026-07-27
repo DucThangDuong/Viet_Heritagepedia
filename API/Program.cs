@@ -15,7 +15,15 @@ public class Program
 
         // Register FastEndpoints & Swagger
         builder.Services.AddFastEndpoints();
-        builder.Services.SwaggerDocument();
+        builder.Services.SwaggerDocument(o =>
+        {
+            o.DocumentSettings = s =>
+            {
+                s.Title = "Viet Heritagepedia API";
+                s.Version = "v1";
+                s.Description = "Hệ thống Backend Viet Heritagepedia - Quản lý di sản văn hóa Việt Nam.";
+            };
+        });
 
         var app = builder.Build();
 
@@ -51,6 +59,7 @@ public class Program
             };
         });
         app.UseSwaggerGen();
+        app.MapHub<API.Hubs.DocumentProcessingHub>("/hubs/document-processing");
 
         app.Run();
     }

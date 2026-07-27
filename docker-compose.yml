@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: viet_heritagepedia_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"    # AMQP protocol
+      - "15672:15672"  # Management Dashboard UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - shared_uploads:/app/uploads
+
+  redis:
+    image: redis:7-alpine
+    container_name: viet_heritagepedia_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  rabbitmq_data:
+  redis_data:
+  shared_uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/shared_uploads
