@@ -25,6 +25,8 @@ public partial class VietHeritagePediaContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserAuthProvider> UserAuthProviders { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Contribution>(entity =>
@@ -125,17 +127,31 @@ public partial class VietHeritagePediaContext : DbContext
             entity.HasIndex(e => e.Email, "UQ__Users__A9D105347D54019D").IsUnique();
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newsequentialid())");
-            entity.Property(e => e.AvatarUrl)
-                .HasMaxLength(500)
-                .IsUnicode(false);
+            entity.Property(e => e.AvatarUrl).HasMaxLength(500).IsUnicode(false);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Email)
-                .HasMaxLength(100)
-                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Email).HasMaxLength(100).IsUnicode(false);
             entity.Property(e => e.FullName).HasMaxLength(100);
-            entity.Property(e => e.Role)
-                .HasMaxLength(100)
-                .HasDefaultValue("Thành viên");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Role).HasMaxLength(100).HasDefaultValue("Thành viên");
+        });
+
+        modelBuilder.Entity<UserAuthProvider>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserAuth__3214EC0709AC3F46");
+
+            entity.HasIndex(e => e.UserId, "IX_UserAuthProviders_UserId");
+            entity.HasIndex(e => new { e.ProviderName, e.ProviderKey }, "UQ_Provider_ProviderKey").IsUnique();
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newsequentialid())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.PasswordHash).HasMaxLength(255);
+            entity.Property(e => e.ProviderKey).HasMaxLength(255).IsUnicode(false);
+            entity.Property(e => e.ProviderName).HasMaxLength(50).IsUnicode(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserAuthProviders)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_UserAuthProviders_Users");
         });
 
         OnModelCreatingPartial(modelBuilder);

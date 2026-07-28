@@ -39,32 +39,54 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as Client / Frontend
+    actor Client
     participant API as CreateLocationEndpoint
-    participant Val as CreateLocationValidator
-    participant MediatR as MediatR Pipeline
+    participant Validator as CreateLocationCommandValidator
+    participant MediatR as IMediator
     participant Handler as CreateLocationCommandHandler
-    participant Repo as ILocationRepository
-    participant UOW as IUnitOfWork
-    participant SQL as SQL Server
+    participant Repo as ILocationRepository (SQL)
+    participant UoW as IUnitOfWork (EF Core)
 
-    Client->>API: POST /api/locations (CreateLocationCommand)
-    API->>Val: Validate(CreateLocationCommand)
-    alt Validation Failed
-        Val-->>API: Validation Errors
-        API-->>Client: 400 Bad Request (ERR_VALIDATION_FAILED)
-    else Validation Passed
-        API->>MediatR: Send(CreateLocationCommand)
-        MediatR->>Handler: Handle(CreateLocationCommand)
-        Handler->>Repo: AddAsync(LocationEntity)
-        Handler->>UOW: SaveChangesAsync()
-        UOW->>SQL: INSERT INTO Locations (...) VALUES (...)
-        SQL-->>UOW: Success
-        UOW-->>Handler: Commit OK
-        Handler-->>MediatR: Result<LocationResponseDto>.Success(dto, 201)
-        MediatR-->>API: Result
-        API-->>Client: 201 Created (LocationResponseDto)
+    Client->>API: POST /api/locations
+    activate API
+    
+    Note over API,Validator: FastEndpoints tự động trigger Validator
+    API->>Validator: ValidateAsync(Command)
+    activate Validator
+    Validator->>Repo: IsLocationNameUniqueAsync(Name)
+    Repo-->>Validator: bool (isUnique)
+    
+    alt Validation Fails
+        Validator-->>API: Validation Errors
+        API-->>Client: 400 Bad Request
     end
+    Validator-->>API: Validation Passed
+    deactivate Validator
+    
+    API->>MediatR: Send(CreateLocationCommand)
+    activate MediatR
+    
+    MediatR->>Handler: Handle(Command, ct)
+    activate Handler
+    
+    Note over Handler: Generate Slug (nếu chưa có)<br/>Map sang Entity Location
+    
+    Handler->>Repo: AddAsync(entity)
+    Repo-->>Handler: Task (Tracked in Memory)
+    
+    Handler->>UoW: SaveChangesAsync()
+    Note right of UoW: SQL Transaction: Insert Location
+    UoW-->>Handler: Task (Committed)
+    
+    Note over Handler: Map Entity sang LocationResponseDto
+    Handler-->>MediatR: Result.Success(201, Dto)
+    deactivate Handler
+    
+    MediatR-->>API: Result object
+    deactivate MediatR
+    
+    API-->>Client: 201 Created (LocationResponseDto)
+    deactivate API
 ```
 
 ---
@@ -141,47 +163,10 @@ sequenceDiagram
 
 ---
 
-### 2.2. `POST /api/heritage-details` - Tạo Mới Chi Tiết Di Sản
+### 2.2. `POST /api/heritage-details` (DEPRECATED)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client as Client / Frontend
-    participant API as CreateHeritageDetailEndpoint
-    participant Val as CreateHeritageDetailValidator
-    participant MediatR as MediatR
-    participant Handler as CreateHeritageDetailCommandHandler
-    participant MongoRepo as IMongoRepository
-    participant ContributionRepo as IContributionRepository
-    participant UOW as IUnitOfWork
-    participant Mongo as MongoDB
-    participant SQL as SQL Server
-
-    Client->>API: POST /api/heritage-details (CreateHeritageDetailCommand)
-    API->>Val: Validate(Command)
-    alt Validation Failed (Title/Context/LocationId/AuthorId)
-        Val-->>API: ERR_TITLE_REQUIRED / ERR_CONTEXT_MIN_LENGTH
-        API-->>Client: 400 Bad Request
-    else Validation Passed
-        API->>MediatR: Send(Command)
-        MediatR->>Handler: Handle(Command)
-        
-        Note over Handler, Mongo: Step 1: Save Rich Document to MongoDB
-        Handler->>MongoRepo: InsertAsync(HeritageDetailDocument)
-        MongoRepo->>Mongo: InsertOne(Document)
-        Mongo-->>MongoRepo: Generated ObjectId
-
-        Note over Handler, SQL: Step 2: Save Metadata Record to SQL Server
-        Handler->>ContributionRepo: AddAsync(ContributionEntity with NoSqlDocumentId)
-        Handler->>UOW: SaveChangesAsync()
-        UOW->>SQL: INSERT INTO Contributions (...) VALUES (...)
-        SQL-->>UOW: Success
-
-        Handler-->>MediatR: Result<Guid>.Success(contribution.Id, 201)
-        MediatR-->>API: Result
-        API-->>Client: 201 Created (Contribution Guid)
-    end
-```
+> **[LƯU Ý]** Endpoint này và Command `CreateHeritageDetailCommand` tương ứng đã bị xóa bỏ hoàn toàn trong bộ mã nguồn. 
+> Logic lưu trữ Polyglot (SQL + MongoDB) hiện tại đã được chuyển giao cho Cụm Tính Năng Document Editor thông qua luồng **Save Draft** và **Publish Contribution** (Xem mục 5).
 
 ---
 
@@ -285,4 +270,91 @@ sequenceDiagram
         Hub-->>Client: Final Chunk Event (IsCompleted: true)
         Client->>Hub: LeaveJobGroup(jobId)
     end
+```
+
+---
+
+## 5. Group Contributions (Document Editor)
+
+### 5.1. `POST /api/contributions/drafts` - Auto-Save Draft (Mỗi lần user thao tác Editor)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant API as SaveDraftEndpoint
+    participant MediatR as IMediator
+    participant Handler as SaveDraftCommandHandler
+    participant MongoRepo as IMongoRepository
+    participant SQLRepo as IContributionRepository
+    participant UoW as IUnitOfWork
+    
+    Client->>API: POST /api/contributions/drafts
+    API->>MediatR: Send(SaveDraftCommand)
+    MediatR->>Handler: Handle(Command)
+    
+    alt is New Draft (ContributionId == null)
+        Handler->>MongoRepo: InsertAsync(HeritageDetailDocument)
+        Handler->>SQLRepo: AddAsync(Contribution [State=0])
+        Handler->>UoW: SaveChangesAsync() (No Outbox Message)
+        Handler-->>API: Result (ContributionId, MongoId)
+    else is Update Draft
+        Handler->>SQLRepo: GetByIdAsync(ContributionId)
+        alt Not Owner
+            Handler-->>API: 403 Forbidden (ERR_UNAUTHORIZED_DRAFT_ACCESS)
+        else Is Owner
+            Handler->>MongoRepo: ReplaceOneAsync / UpdateAsync (MongoId)
+            Handler->>SQLRepo: Update(Contribution.UpdatedAt)
+            Handler->>UoW: SaveChangesAsync() (No Outbox Message)
+            Handler-->>API: Result (ContributionId, MongoId)
+        end
+    end
+    API-->>Client: 200/201 OK (SaveDraftResponse)
+```
+
+---
+
+### 5.2. `POST /api/contributions/{id}/publish` - Publish Bài Viết Từ Draft
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant API as PublishContributionEndpoint
+    participant Validator as PublishContributionCommandValidator
+    participant MediatR as IMediator
+    participant Handler as PublishContributionCommandHandler
+    participant MongoRepo as IMongoRepository
+    participant SQLRepo as IContributionRepository
+    participant OutboxRepo as IRepository<OutboxMessage>
+    participant UoW as IUnitOfWork
+    
+    Client->>API: POST /api/contributions/{id}/publish
+    
+    Note over API,Validator: Pipeline bọc MustAsync validate DB
+    API->>Validator: ValidateAsync(Command)
+    Validator->>SQLRepo: GetByIdAsync(id)
+    Validator->>MongoRepo: GetByIdAsync(NoSqlDocumentId)
+    Note over Validator: Check State == 0, Owner, Title Length, ContentHtml Length
+    alt Validation Fails
+        Validator-->>API: Errors (ERR_CONTRIBUTION_NOT_DRAFT, v.v...)
+        API-->>Client: 400 Bad Request
+    end
+    
+    Validator-->>API: Validation Passed
+    API->>MediatR: Send(Command)
+    MediatR->>Handler: Handle(Command)
+    
+    Handler->>SQLRepo: GetByIdAsync(id)
+    Note over Handler: Change State: 0 -> 1 (Pending Review)
+    Handler->>SQLRepo: Update(Contribution)
+    
+    Note over Handler: Prepare Integration Event
+    Handler->>OutboxRepo: AddAsync(OutboxMessage: ContributionSubmittedEvent)
+    
+    Handler->>UoW: SaveChangesAsync()
+    Note right of UoW: Atomic Transaction:<br/>Update State + Insert Outbox
+    
+    Handler-->>API: Result.Success(200)
+    API-->>Client: 200 OK
 ```

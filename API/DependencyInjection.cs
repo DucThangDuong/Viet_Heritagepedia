@@ -1,10 +1,13 @@
 using Application.Common;
+using Application.Interfaces.Auth;
 using Application.Interfaces.QueryServices;
 using Application.Interfaces.Repositories;
+using Application.IServices;
 using FastEndpoints;
 using Infrastructure.Persistence.MongoDb;
 using Infrastructure.Persistence.Queries;
 using Infrastructure.Persistence.SqlServer;
+using Infrastructure.Services;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -52,10 +55,16 @@ public static class DependencyInjection
         // Register Custom Strongly-Typed Repositories (Write / Domain Rules)
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<IContributionRepository, ContributionRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
         // Register Pure Transaction-Only Unit of Work (Write)
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Register Auth Services
+        services.AddScoped<IJWTTokenServices, JwtTokenService>();
+        services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+        services.AddSingleton<ITokenCacheService, TokenCacheService>();
 
         // Register Query Services (Read Path returning DTOs)
         services.AddScoped<ILocationQueryService, LocationQueryService>();
@@ -78,7 +87,7 @@ public static class DependencyInjection
         // 4. MassTransit + RabbitMQ Configuration
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<Consumers.DocumentChunkProcessedConsumer>();
+            x.AddConsumer<Consumers.LocationDocumentProcessedConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {

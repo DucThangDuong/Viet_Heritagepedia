@@ -39,16 +39,7 @@ public class CreateLocationCommandHandler : IRequestHandler<CreateLocationComman
 
     public async Task<Result<LocationResponseDto>> Handle(CreateLocationCommand request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return Result<LocationResponseDto>.Failure("ERR_LOCATION_NAME_REQUIRED", 400);
-        }
-
-        var isUnique = await _locationRepository.IsLocationNameUniqueAsync(request.Name, cancellationToken);
-        if (!isUnique)
-        {
-            return Result<LocationResponseDto>.Failure("ERR_LOCATION_NAME_EXISTS", 400);
-        }
+        // ── Validation guarantees we have a unique and valid Name here ──
 
         var slug = string.IsNullOrWhiteSpace(request.Slug)
             ? request.Name.ToLowerInvariant().Replace(" ", "-")
