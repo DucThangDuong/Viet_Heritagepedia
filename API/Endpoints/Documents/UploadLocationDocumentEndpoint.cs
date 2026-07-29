@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace API.Endpoints.Documents;
 
@@ -42,17 +44,27 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
     public override void Configure()
     {
         Post("/api/locations/{LocationId}/documents");
-        AllowAnonymous(); 
+        AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
         AllowFileUploads();
         Summary(s =>
         {
             s.Summary = "Upload PDF/DOCX document for a Location & dispatch conversion command";
-            s.Description = "Validates file header signature, saves file, and emits ProcessLocationDocumentCommand to RabbitMQ.";
+            s.Description = "Requires authenticated user JWT token. Validates file header signature, saves file, and emits ProcessLocationDocumentCommand to RabbitMQ.";
         });
     }
 
     public override async Task HandleAsync(UploadLocationDocumentRequest req, CancellationToken ct)
     {
+        var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
+        {
+            var fail = Result<UploadLocationDocumentResponse>.Failure("ERR_UNAUTHORIZED", 401);
+            await this.SendApiResponseAsync(fail, ct);
+            return;
+        }
+
+        req.AuthorId = authorId;
+
         if (req.File == null || req.File.Length == 0)
         {
             var fail = Result<UploadLocationDocumentResponse>.Failure("ERR_FILE_REQUIRED", 400);

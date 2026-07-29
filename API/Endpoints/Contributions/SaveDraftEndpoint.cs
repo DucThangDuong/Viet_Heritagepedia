@@ -1,13 +1,12 @@
-using System;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using API.Extensions;
+using Application.Common;
 using Application.Features.Contributions.Commands;
 using FastEndpoints;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace API.Endpoints.Contributions;
 public class SaveDraftRequest
@@ -15,6 +14,7 @@ public class SaveDraftRequest
     public Guid? ContributionId { get; set; }
     public Guid LocationId { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
     public JsonElement Content { get; set; }
 }
 
@@ -28,8 +28,6 @@ public class SaveDraftValidator : Validator<SaveDraftRequest>
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("ERR_TITLE_REQUIRED")
             .MaximumLength(255).WithMessage("ERR_TITLE_MAX_LENGTH");
-
-        // Ensure Content is a valid JSON object (not an empty token)
         RuleFor(x => x.Content)
             .Must(c => c.ValueKind == JsonValueKind.Object)
             .WithMessage("ERR_CONTENT_INVALID_JSON");
@@ -39,32 +37,37 @@ public class SaveDraftValidator : Validator<SaveDraftRequest>
 public class SaveDraftEndpoint : Endpoint<SaveDraftRequest, SaveDraftResponse>
 {
     private readonly IMediator _mediator;
-
     public SaveDraftEndpoint(IMediator mediator) => _mediator = mediator;
 
     public override void Configure()
     {
         Post("/api/contributions/drafts");
-        AllowAnonymous();
+        AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
         Summary(s =>
         {
             s.Summary = "Upsert a contribution draft (auto-save)";
             s.Description = "Creates a new draft or overwrites an existing one. " +
-                            "SQL stores metadata; MongoDB stores the rich JSON content. " +
-                            "No integration event is emitted (Outbox is bypassed).";
+                            "Requires authenticated user JWT token. " +
+                            "SQL stores metadata; MongoDB stores the rich JSON content.";
         });
     }
 
     public override async Task HandleAsync(SaveDraftRequest req, CancellationToken ct)
     {
         var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var authorId = Guid.TryParse(authorIdClaim, out var parsed) ? parsed : Guid.Empty;
+        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
+        {
+            var fail = Result<SaveDraftResponse>.Failure("ERR_UNAUTHORIZED", 401);
+            await this.SendApiResponseAsync(fail, ct);
+            return;
+        }
 
         var command = new SaveDraftCommand
         {
             ContributionId = req.ContributionId,
             LocationId = req.LocationId,
             Title = req.Title,
+            Summary = req.Summary,
             Content = req.Content,
             AuthorId = authorId
         };

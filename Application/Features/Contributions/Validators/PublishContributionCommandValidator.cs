@@ -22,7 +22,6 @@ public class PublishContributionCommandValidator : AbstractValidator<PublishCont
         RuleFor(x => x.ContributionId)
             .NotEmpty().WithMessage("ERR_CONTRIBUTION_ID_REQUIRED");
 
-        // Validate Business Rules via FluentValidation asynchronously
         RuleFor(x => x)
             .MustAsync(async (command, ct) => 
             {

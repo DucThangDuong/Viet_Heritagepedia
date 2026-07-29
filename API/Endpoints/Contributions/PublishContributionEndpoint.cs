@@ -6,6 +6,7 @@ using API.Extensions;
 using Application.Features.Contributions.Commands;
 using FastEndpoints;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace API.Endpoints.Contributions;
 
@@ -22,7 +23,7 @@ public class PublishContributionEndpoint : Endpoint<PublishContributionRequest>
     public override void Configure()
     {
         Post("/api/contributions/{Id}/publish");
-        AllowAnonymous();
+        AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
         Summary(s =>
         {
             s.Summary = "Publish a draft contribution (transitions WorkflowState 0 → 1)";
@@ -35,7 +36,12 @@ public class PublishContributionEndpoint : Endpoint<PublishContributionRequest>
     public override async Task HandleAsync(PublishContributionRequest req, CancellationToken ct)
     {
         var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var authorId = Guid.TryParse(authorIdClaim, out var parsed) ? parsed : Guid.Empty;
+        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
+        {
+            var fail = Application.Common.Result.Failure("ERR_UNAUTHORIZED", 401);
+            await this.SendApiResponseAsync(fail, ct);
+            return;
+        }
 
         var command = new PublishContributionCommand
         {

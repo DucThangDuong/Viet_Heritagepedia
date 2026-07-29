@@ -7,6 +7,7 @@ public class HeritageDetailDto
 {
     // Location Details (SQL)
     public string Id { get; set; } = string.Empty; // Slug
+    public Guid LocationId { get; set; } // Actual SQL ID
     public string Title { get; set; } = string.Empty; // Name
     public string VietnameseTitle { get; set; } = string.Empty; // VietnameseName
     public string Category { get; set; } = string.Empty;
@@ -69,10 +70,6 @@ public class CommunityArticleDto
     public string CreatedAt { get; set; } = string.Empty; // Formatted date
     public string AuthorName { get; set; } = string.Empty;
     public string? AuthorAvatar { get; set; }
-
-    // MongoDB Data (Type 2)
-    public string ContentHtml { get; set; } = string.Empty;
-    public object? Blocks { get; set; } // Can be raw JSON array or parsed list
 }
 
 public class CreateHeritageDetailDto

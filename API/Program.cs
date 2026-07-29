@@ -37,6 +37,8 @@ public class Program
 
         app.UseCors("CORS");
         app.UseHttpsRedirection();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.UseFastEndpoints(c => 
         {
             c.Errors.ResponseBuilder = (failures, ctx, statusCode) =>

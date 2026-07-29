@@ -17,13 +17,11 @@ namespace Infrastructure.Services
         public JwtTokenService(IConfiguration configuration)
         {
             _secretKey = configuration["Jwt:SecretKey"]
-                ?? configuration["SecretKey"]
                 ?? throw new InvalidOperationException("SecretKey not found in configuration. Please add 'Jwt:SecretKey' or 'SecretKey' to appsettings.json.");
             _issuer = configuration["Jwt:Issuer"];
             _audience = configuration["Jwt:Audience"];
         }
 
-        // ── UserId is now Guid to match UNIQUEIDENTIFIER in DB ──
         public string GenerateAccessToken(Guid userId, string role)
         {
             var authClaims = new List<Claim>

@@ -18,7 +18,7 @@ public class MongoRepository<TDocument> : IMongoRepository<TDocument> where TDoc
 
     public async Task<TDocument?> GetByIdAsync(string id)
     {
-        var filter = Builders<TDocument>.Filter.Eq("Id", id);
+        var filter = Builders<TDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.Parse(id));
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }
 
@@ -39,13 +39,13 @@ public class MongoRepository<TDocument> : IMongoRepository<TDocument> where TDoc
 
     public async Task UpdateAsync(string id, TDocument document)
     {
-        var filter = Builders<TDocument>.Filter.Eq("Id", id);
+        var filter = Builders<TDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.Parse(id));
         await _collection.ReplaceOneAsync(filter, document);
     }
 
     public async Task DeleteAsync(string id)
     {
-        var filter = Builders<TDocument>.Filter.Eq("Id", id);
+        var filter = Builders<TDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.Parse(id));
         await _collection.DeleteOneAsync(filter);
     }
 }
