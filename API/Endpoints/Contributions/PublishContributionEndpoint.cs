@@ -1,5 +1,6 @@
 using System;
 using System.Security.Claims;
+using FluentValidation;
 using System.Threading;
 using System.Threading.Tasks;
 using API.Extensions;
@@ -13,7 +14,20 @@ namespace API.Endpoints.Contributions;
 public class PublishContributionRequest
 {
     public Guid Id { get; set; }
+
+    [FromClaim(ClaimTypes.NameIdentifier)]
+    public Guid AuthorId { get; set; }
 }
+
+public class PublishContributionRequestValidator : Validator<PublishContributionRequest>
+{
+    public PublishContributionRequestValidator()
+    {
+        RuleFor(x => x.Id)
+            .NotEmpty().WithMessage("ERR_CONTRIBUTION_ID_REQUIRED");
+    }
+}
+
 public class PublishContributionEndpoint : Endpoint<PublishContributionRequest>
 {
     private readonly IMediator _mediator;
@@ -35,18 +49,10 @@ public class PublishContributionEndpoint : Endpoint<PublishContributionRequest>
 
     public override async Task HandleAsync(PublishContributionRequest req, CancellationToken ct)
     {
-        var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
-        {
-            var fail = Application.Common.Result.Failure("ERR_UNAUTHORIZED", 401);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
-
         var command = new PublishContributionCommand
         {
             ContributionId = req.Id,
-            AuthorId = authorId
+            AuthorId = req.AuthorId
         };
 
         var result = await _mediator.Send(command, ct);

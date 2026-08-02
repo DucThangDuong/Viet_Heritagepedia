@@ -150,7 +150,8 @@ public class ContributionHandlersTests
         var handler = new PublishContributionCommandHandler(
             _contributionRepoMock.Object, 
             _outboxRepoMock.Object, 
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object,
+            _mongoRepoMock.Object);
 
         var authorId = Guid.NewGuid();
         var contributionId = Guid.NewGuid();
@@ -166,6 +167,13 @@ public class ContributionHandlersTests
         };
 
         _contributionRepoMock.Setup(x => x.GetByIdAsync(contributionId)).ReturnsAsync(draft);
+        
+        var mongoDoc = new HeritageDetailDocument
+        {
+            Id = mongoDbId,
+            ContentHtml = new string('a', 50) // Simulate content length >= 50
+        };
+        _mongoRepoMock.Setup(x => x.GetByIdAsync(mongoDbId)).ReturnsAsync(mongoDoc);
 
         var command = new PublishContributionCommand
         {

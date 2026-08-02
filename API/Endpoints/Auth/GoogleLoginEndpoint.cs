@@ -1,6 +1,7 @@
 using API.Extensions;
 using Application.Features.Auth.Commands;
 using FastEndpoints;
+using FluentValidation;
 using MediatR;
 
 namespace API.Endpoints.Auth;
@@ -8,6 +9,15 @@ namespace API.Endpoints.Auth;
 public class GoogleLoginRequest
 {
     public string IdToken { get; set; } = string.Empty;
+}
+
+public class GoogleLoginRequestValidator : Validator<GoogleLoginRequest>
+{
+    public GoogleLoginRequestValidator()
+    {
+        RuleFor(x => x.IdToken)
+            .NotEmpty().WithMessage("Google IdToken không được để trống");
+    }
 }
 
 public class GoogleLoginEndpoint : Endpoint<GoogleLoginRequest>

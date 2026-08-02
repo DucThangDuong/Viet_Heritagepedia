@@ -19,20 +19,43 @@ public class PublishContributionCommandHandler : IRequestHandler<PublishContribu
     private readonly IContributionRepository _contributionRepo;
     private readonly IRepository<OutboxMessage> _outboxRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMongoRepository<HeritageDetailDocument> _mongoRepo;
 
     public PublishContributionCommandHandler(
         IContributionRepository contributionRepo,
         IRepository<OutboxMessage> outboxRepo,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMongoRepository<HeritageDetailDocument> mongoRepo)
     {
         _contributionRepo = contributionRepo;
         _outboxRepo = outboxRepo;
         _unitOfWork = unitOfWork;
+        _mongoRepo = mongoRepo;
     }
 
     public async Task<Result> Handle(PublishContributionCommand request, CancellationToken ct)
     {
         var contribution = await _contributionRepo.GetByIdAsync(request.ContributionId);
+        
+        if (contribution == null)
+            return Result.Failure("ERR_CONTRIBUTION_NOT_FOUND", 404);
+
+        if (contribution.AuthorId != request.AuthorId)
+            return Result.Failure("ERR_UNAUTHORIZED_PUBLISH", 403);
+
+        if (contribution.WorkflowState != 0)
+            return Result.Failure("ERR_CONTRIBUTION_NOT_DRAFT", 400);
+
+        var mongoDoc = await _mongoRepo.GetByIdAsync(contribution.NoSqlDocumentId!);
+        if (mongoDoc == null)
+            return Result.Failure("ERR_INVALID_DOCUMENT_CONTENT", 400);
+
+        var contentLength = mongoDoc.ContentHtml?.Length ?? 0;
+        var isTitleValid = !string.IsNullOrWhiteSpace(contribution.Title) && contribution.Title.Length >= 5;
+        var isContentValid = contentLength >= 50;
+
+        if (!isTitleValid || !isContentValid)
+            return Result.Failure("ERR_INVALID_DOCUMENT_CONTENT", 400);
 
         contribution!.WorkflowState = 1;
         contribution.UpdatedAt = DateTime.UtcNow;

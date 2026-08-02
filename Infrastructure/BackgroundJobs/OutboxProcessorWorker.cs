@@ -69,7 +69,6 @@ public class OutboxProcessorWorker : BackgroundService
             {
                 await PublishEventAsync(publishEndpoint, message, ct);
 
-                // Mark as processed
                 message.ProcessedAt = DateTime.UtcNow;
                 _logger.LogInformation(
                     "Outbox message {Id} ({Type}) published and marked as processed.",

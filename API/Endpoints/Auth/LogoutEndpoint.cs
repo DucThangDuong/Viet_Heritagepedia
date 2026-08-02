@@ -7,7 +7,13 @@ using System.Security.Claims;
 
 namespace API.Endpoints.Auth;
 
-public class LogoutEndpoint : EndpointWithoutRequest
+public class LogoutRequest
+{
+    [FromClaim(ClaimTypes.NameIdentifier)]
+    public Guid UserId { get; set; }
+}
+
+public class LogoutEndpoint : Endpoint<LogoutRequest>
 {
     public IMediator Mediator { get; set; } = null!;
 
@@ -22,17 +28,14 @@ public class LogoutEndpoint : EndpointWithoutRequest
         });
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(LogoutRequest req, CancellationToken ct)
     {
-        // Extract UserId from the valid JWT (required because endpoint is authenticated)
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Guid.TryParse(userIdStr, out var userId);
 
         var accessToken = HttpContext.Request.Headers["Authorization"]
             .FirstOrDefault()?.Replace("Bearer ", "");
         var refreshToken = HttpContext.Request.Cookies["refreshToken"];
 
-        var result = await Mediator.Send(new LogoutCommand(userId, accessToken, refreshToken), ct);
+        var result = await Mediator.Send(new LogoutCommand(req.UserId, accessToken, refreshToken), ct);
 
         if (result.IsSuccess)
         {

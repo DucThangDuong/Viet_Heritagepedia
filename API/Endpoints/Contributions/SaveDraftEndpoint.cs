@@ -16,6 +16,9 @@ public class SaveDraftRequest
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
     public JsonElement Content { get; set; }
+
+    [FromClaim(ClaimTypes.NameIdentifier)]
+    public Guid AuthorId { get; set; }
 }
 
 public class SaveDraftValidator : Validator<SaveDraftRequest>
@@ -27,7 +30,12 @@ public class SaveDraftValidator : Validator<SaveDraftRequest>
 
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("ERR_TITLE_REQUIRED")
-            .MaximumLength(255).WithMessage("ERR_TITLE_MAX_LENGTH");
+            .MaximumLength(255).WithMessage("ERR_TITLE_MAX_LENGTH")
+            .Matches(@"^[\p{L}\p{N}\s.,'-]+$").WithMessage("Tên chứa ký tự không hợp lệ");
+            
+        RuleFor(x => x.Summary)
+            .MaximumLength(2000).WithMessage("Summary quá dài");
+
         RuleFor(x => x.Content)
             .Must(c => c.ValueKind == JsonValueKind.Object)
             .WithMessage("ERR_CONTENT_INVALID_JSON");
@@ -50,17 +58,12 @@ public class SaveDraftEndpoint : Endpoint<SaveDraftRequest, SaveDraftResponse>
                             "Requires authenticated user JWT token. " +
                             "SQL stores metadata; MongoDB stores the rich JSON content.";
         });
+        
+        Options(x => x.RequireRateLimiting("UploadLimit"));
     }
 
     public override async Task HandleAsync(SaveDraftRequest req, CancellationToken ct)
     {
-        var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
-        {
-            var fail = Result<SaveDraftResponse>.Failure("ERR_UNAUTHORIZED", 401);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
 
         var command = new SaveDraftCommand
         {
@@ -69,7 +72,7 @@ public class SaveDraftEndpoint : Endpoint<SaveDraftRequest, SaveDraftResponse>
             Title = req.Title,
             Summary = req.Summary,
             Content = req.Content,
-            AuthorId = authorId
+            AuthorId = req.AuthorId
         };
 
         var result = await _mediator.Send(command, ct);

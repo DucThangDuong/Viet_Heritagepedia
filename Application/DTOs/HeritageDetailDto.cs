@@ -21,7 +21,7 @@ public class HeritageDetailDto
     public GeoCoordinatesDto? Coordinates { get; set; }
 
     // Heritage Content (MongoDB Type 1)
-    public string ShortDescription { get; set; } = string.Empty; // SQL Summary of Type 1 Contribution
+    public string ShortDescription { get; set; } = string.Empty; 
     public string LeadQuote { get; set; } = string.Empty;
     public string FullDescription { get; set; } = string.Empty;
     public string Quote { get; set; } = string.Empty;
@@ -67,7 +67,7 @@ public class CommunityArticleDto
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
     public int LikesCount { get; set; }
-    public string CreatedAt { get; set; } = string.Empty; // Formatted date
+    public string CreatedAt { get; set; } = string.Empty; 
     public string AuthorName { get; set; } = string.Empty;
     public string? AuthorAvatar { get; set; }
 }

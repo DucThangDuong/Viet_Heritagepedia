@@ -9,11 +9,10 @@ services:
       - "5672:5672"    # AMQP protocol
       - "15672:15672"  # Management Dashboard UI
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RMQ_USER:-vietadmin}
+      RABBITMQ_DEFAULT_PASS: ${RMQ_PASS:-VhpAdmin@2026!}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-      - shared_uploads:/app/uploads
 
   redis:
     image: redis:7-alpine
@@ -24,12 +23,21 @@ services:
     volumes:
       - redis_data:/data
 
+  minio:
+    image: minio/minio
+    container_name: viet_heritagepedia_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    volumes:
+      - minio_data:/data
+
 volumes:
   rabbitmq_data:
   redis_data:
-  shared_uploads:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/shared_uploads
+  minio_data:

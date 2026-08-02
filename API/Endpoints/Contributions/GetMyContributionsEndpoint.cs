@@ -12,7 +12,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace API.Endpoints.Contributions;
 
-public class GetMyContributionsEndpoint : EndpointWithoutRequest<IEnumerable<MyContributionListDto>>
+public class GetMyContributionsRequest
+{
+    [FromClaim(ClaimTypes.NameIdentifier)]
+    public Guid UserId { get; set; }
+}
+
+public class GetMyContributionsEndpoint : Endpoint<GetMyContributionsRequest, IEnumerable<MyContributionListDto>>
 {
     private readonly IContributionQueryService _queryService;
 
@@ -32,17 +38,10 @@ public class GetMyContributionsEndpoint : EndpointWithoutRequest<IEnumerable<MyC
         });
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(GetMyContributionsRequest req, CancellationToken ct)
     {
-        var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
-        {
-            var fail = Result<IEnumerable<MyContributionListDto>>.Failure("ERR_UNAUTHORIZED", 401);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
 
-        var result = await _queryService.GetMyContributionsAsync(authorId, ct);
+        var result = await _queryService.GetMyContributionsAsync(req.UserId, ct);
         var success = Result<IEnumerable<MyContributionListDto>>.Success(result, 200);
         await this.SendApiResponseAsync(success, ct);
     }

@@ -3,11 +3,6 @@ using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Services;
-
-/// <summary>
-/// Validates Google Id Tokens using the Google.Apis.Auth library.
-/// Business logic (user creation/linking) is handled by GoogleLoginCommandHandler.
-/// </summary>
 public class GoogleAuthService : IGoogleAuthService
 {
     private readonly string _googleClientId;

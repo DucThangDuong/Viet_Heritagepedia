@@ -18,6 +18,7 @@ namespace API.Endpoints.Documents;
 public class UploadLocationDocumentRequest
 {
     public Guid LocationId { get; set; }
+    [FromClaim(ClaimTypes.NameIdentifier)]
     public Guid AuthorId { get; set; }
     public IFormFile File { get; set; } = null!;
 }
@@ -51,19 +52,22 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
             s.Summary = "Upload PDF/DOCX document for a Location & dispatch conversion command";
             s.Description = "Requires authenticated user JWT token. Validates file header signature, saves file, and emits ProcessLocationDocumentCommand to RabbitMQ.";
         });
+        
+        Options(x => 
+        {
+            x.RequireRateLimiting("UploadLimit");
+            x.AddEndpointFilter(async (context, next) =>
+            {
+                // Enforce 15MB limit at the endpoint filter level if needed, or rely on Kestrel
+                context.HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 15_728_640;
+                return await next(context);
+            });
+        });
     }
 
     public override async Task HandleAsync(UploadLocationDocumentRequest req, CancellationToken ct)
     {
-        var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
-        {
-            var fail = Result<UploadLocationDocumentResponse>.Failure("ERR_UNAUTHORIZED", 401);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
 
-        req.AuthorId = authorId;
 
         if (req.File == null || req.File.Length == 0)
         {

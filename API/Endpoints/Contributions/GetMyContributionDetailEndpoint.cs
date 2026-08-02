@@ -11,7 +11,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace API.Endpoints.Contributions;
 
-public class GetMyContributionDetailEndpoint : EndpointWithoutRequest<MyContributionDetailDto>
+public class GetMyContributionDetailRequest
+{
+    public Guid Id { get; set; }
+
+    [FromClaim(ClaimTypes.NameIdentifier)]
+    public Guid UserId { get; set; }
+}
+
+public class GetMyContributionDetailEndpoint : Endpoint<GetMyContributionDetailRequest, MyContributionDetailDto>
 {
     private readonly IContributionQueryService _queryService;
 
@@ -31,25 +39,9 @@ public class GetMyContributionDetailEndpoint : EndpointWithoutRequest<MyContribu
         });
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(GetMyContributionDetailRequest req, CancellationToken ct)
     {
-        var authorIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(authorIdClaim, out var authorId) || authorId == Guid.Empty)
-        {
-            var fail = Result<MyContributionDetailDto>.Failure("ERR_UNAUTHORIZED", 401);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
-
-        var idStr = Route<string>("id");
-        if (string.IsNullOrEmpty(idStr) || !Guid.TryParse(idStr, out var contributionId))
-        {
-            var fail = Result<MyContributionDetailDto>.Failure("ERR_INVALID_ID", 400);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
-
-        var detail = await _queryService.GetMyContributionDetailAsync(authorId, contributionId, ct);
+        var detail = await _queryService.GetMyContributionDetailAsync(req.UserId, req.Id, ct);
         if (detail == null)
         {
             var fail = Result<MyContributionDetailDto>.Failure("ERR_NOT_FOUND_OR_UNAUTHORIZED", 404);
