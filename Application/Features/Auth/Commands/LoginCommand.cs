@@ -38,7 +38,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthToke
         
         if (provider is null || !VerifyPassword(request.Password, provider.PasswordHash))
             return Result<AuthTokenResponse>.Failure("ERR_INVALID_CREDENTIALS", 401);
-
         if (!user.IsActive || user.IsLocked)
             return Result<AuthTokenResponse>.Failure("ERR_ACCOUNT_LOCKED", 403);
 

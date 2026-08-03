@@ -176,7 +176,6 @@ public class ContributionHandlersTests
         _contributionRepoMock.Setup(x => x.GetByIdAsync(contributionId)).ReturnsAsync(draft);
         
         var mongoDoc = HeritageDetailDocument.CreateCommunityArticle(Guid.NewGuid().ToString(), new string('a', 50));
-        // Id is generated inside CreateCommunityArticle, but it doesn't matter for the test since we just return it.
         _mongoRepoMock.Setup(x => x.GetByIdAsync(mongoDbId)).ReturnsAsync(mongoDoc);
 
         var command = new PublishContributionCommand
@@ -190,7 +189,6 @@ public class ContributionHandlersTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-
         _contributionRepoMock.Verify(x => x.Update(It.Is<Contribution>(c => c.WorkflowState == (int)ContributionWorkflowState.PendingReview)), Times.Once);
         _outboxRepoMock.Verify(x => x.AddAsync(It.Is<OutboxMessage>(m => m.MessageType == "ContributionSubmittedEvent")), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

@@ -81,7 +81,6 @@ public class LocationHandlersTests
 
         // Act
         _locationRepoMock.Setup(x => x.IsLocationNameUniqueAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
