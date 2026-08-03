@@ -1,4 +1,4 @@
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,13 +11,12 @@ public class UserRepository : GenericRepository<User>, IUserRepository
     }
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
-        => await _dbSet.FirstOrDefaultAsync(u => u.Email == email, ct);
+        => await _dbSet
+            .Include(u => u.UserAuthProviders)
+            .FirstOrDefaultAsync(u => u.Email == email, ct);
 
-    public async Task<UserAuthProvider?> GetAuthProviderAsync(string providerName, string providerKey, CancellationToken ct = default)
-        => await _context.UserAuthProviders
-            .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.ProviderName == providerName && p.ProviderKey == providerKey, ct);
-
-    public async Task AddAuthProviderAsync(UserAuthProvider provider, CancellationToken ct = default)
-        => await _context.UserAuthProviders.AddAsync(provider, ct);
+    public async Task<User?> GetByAuthProviderAsync(string providerName, string providerKey, CancellationToken ct = default)
+        => await _dbSet
+            .Include(u => u.UserAuthProviders)
+            .FirstOrDefaultAsync(u => u.UserAuthProviders.Any(p => p.ProviderName == providerName && p.ProviderKey == providerKey), ct);
 }

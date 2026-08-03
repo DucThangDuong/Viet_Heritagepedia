@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
+using Domain.Enums;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +32,7 @@ public class LocationRepository : GenericRepository<Location>, ILocationReposito
         double latitude, double longitude, double radiusInKm, CancellationToken ct = default)
     {
         return await _dbSet
-            .Include(l => l.Contributions.Where(c => c.WorkflowState == 1))
+            .Include(l => l.Contributions.Where(c => c.WorkflowState == (int)ContributionWorkflowState.PendingReview))
             .Where(l => l.IsActive == true)
             .ToListAsync(ct);
     }

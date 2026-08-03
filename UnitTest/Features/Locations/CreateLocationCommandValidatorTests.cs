@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using API.Endpoints.Locations;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using FluentValidation.TestHelper;
 using Moq;
 using Xunit;

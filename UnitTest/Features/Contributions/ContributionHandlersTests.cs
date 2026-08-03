@@ -3,7 +3,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Features.Contributions.Commands;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
+using Domain.Enums;
 using Domain.Entities;
 using FluentAssertions;
 using Moq;
@@ -72,16 +73,17 @@ public class ContributionHandlersTests
         // Arrange
         var handler = new SaveDraftCommandHandler(_contributionRepoMock.Object, _mongoRepoMock.Object, _unitOfWorkMock.Object);
         var authorId = Guid.NewGuid();
-        var existingDraftId = Guid.NewGuid();
         var mongoDbId = "507f1f77bcf86cd799439011";
-        
-        var existingContribution = new Contribution 
-        { 
-            Id = existingDraftId, 
-            AuthorId = authorId, 
-            NoSqlDocumentId = mongoDbId,
-            LocationId = Guid.NewGuid()
-        };
+        var existingContribution = Contribution.CreateDraft(
+            locationId: Guid.NewGuid(),
+            authorId: authorId,
+            title: "Draft Title",
+            summary: null,
+            sourceDocumentUrl: null,
+            noSqlDocumentId: mongoDbId,
+            type: Domain.Enums.ContributionType.CommunityArticle
+        );
+        var existingDraftId = existingContribution.Id;
 
         _contributionRepoMock.Setup(x => x.GetByIdAsync(existingDraftId)).ReturnsAsync(existingContribution);
 
@@ -92,6 +94,8 @@ public class ContributionHandlersTests
             Title = "Updated Draft",
             Content = JsonDocument.Parse("{\"updated\": true}").RootElement
         };
+
+        _mongoRepoMock.Setup(x => x.GetByIdAsync(mongoDbId)).ReturnsAsync(HeritageDetailDocument.CreateCommunityArticle(Guid.NewGuid().ToString(), "html"));
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -110,13 +114,16 @@ public class ContributionHandlersTests
     {
         // Arrange
         var handler = new SaveDraftCommandHandler(_contributionRepoMock.Object, _mongoRepoMock.Object, _unitOfWorkMock.Object);
-        var existingDraftId = Guid.NewGuid();
-        
-        var existingContribution = new Contribution 
-        { 
-            Id = existingDraftId, 
-            AuthorId = Guid.NewGuid() // Different user owns this draft
-        };
+        var existingContribution = Contribution.CreateDraft(
+            locationId: Guid.NewGuid(),
+            authorId: Guid.NewGuid(), // Different user owns this draft
+            title: "Draft Title",
+            summary: null,
+            sourceDocumentUrl: null,
+            noSqlDocumentId: null,
+            type: Domain.Enums.ContributionType.CommunityArticle
+        );
+        var existingDraftId = existingContribution.Id;
 
         _contributionRepoMock.Setup(x => x.GetByIdAsync(existingDraftId)).ReturnsAsync(existingContribution);
 
@@ -154,25 +161,22 @@ public class ContributionHandlersTests
             _mongoRepoMock.Object);
 
         var authorId = Guid.NewGuid();
-        var contributionId = Guid.NewGuid();
         var mongoDbId = "60d5ec49f1165a6f2c3b8b11";
-
-        var draft = new Contribution 
-        { 
-            Id = contributionId, 
-            AuthorId = authorId, 
-            WorkflowState = 0, // Draft state
-            NoSqlDocumentId = mongoDbId,
-            Title = "Valid Title Length"
-        };
+        var draft = Contribution.CreateDraft(
+            locationId: Guid.NewGuid(),
+            authorId: authorId,
+            title: "Valid Title Length",
+            summary: null,
+            sourceDocumentUrl: null,
+            noSqlDocumentId: mongoDbId,
+            type: Domain.Enums.ContributionType.CommunityArticle
+        );
+        var contributionId = draft.Id;
 
         _contributionRepoMock.Setup(x => x.GetByIdAsync(contributionId)).ReturnsAsync(draft);
         
-        var mongoDoc = new HeritageDetailDocument
-        {
-            Id = mongoDbId,
-            ContentHtml = new string('a', 50) // Simulate content length >= 50
-        };
+        var mongoDoc = HeritageDetailDocument.CreateCommunityArticle(Guid.NewGuid().ToString(), new string('a', 50));
+        // Id is generated inside CreateCommunityArticle, but it doesn't matter for the test since we just return it.
         _mongoRepoMock.Setup(x => x.GetByIdAsync(mongoDbId)).ReturnsAsync(mongoDoc);
 
         var command = new PublishContributionCommand
@@ -187,7 +191,7 @@ public class ContributionHandlersTests
         // Assert
         result.IsSuccess.Should().BeTrue();
 
-        _contributionRepoMock.Verify(x => x.Update(It.Is<Contribution>(c => c.WorkflowState == 1)), Times.Once);
+        _contributionRepoMock.Verify(x => x.Update(It.Is<Contribution>(c => c.WorkflowState == (int)ContributionWorkflowState.PendingReview)), Times.Once);
         _outboxRepoMock.Verify(x => x.AddAsync(It.Is<OutboxMessage>(m => m.MessageType == "ContributionSubmittedEvent")), Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

@@ -1,5 +1,5 @@
 using Application.Common;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using MediatR;
 using System.Security.Cryptography;
@@ -29,30 +29,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Gu
         if (existing is not null)
             return Result<Guid>.Failure("ERR_EMAIL_ALREADY_EXISTS", 409);
 
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            FullName = request.FullName,
-            Email = request.Email,
-            IsActive = true,
-            IsEmailVerified = false,
-            IsLocked = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var user = User.Create(
+            email: request.Email,
+            fullName: request.FullName,
+            avatarUrl: null,
+            role: "User"
+        );
 
-        var provider = new UserAuthProvider
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            ProviderName = "Local",
-            ProviderKey = request.Email,
-            PasswordHash = HashPassword(request.Password),
-            CreatedAt = DateTime.UtcNow
-        };
+        user.AddAuthProvider("Local", request.Email, HashPassword(request.Password));
 
         await _userRepo.AddAsync(user);
-        await _userRepo.AddAuthProviderAsync(provider, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(user.Id, 201);

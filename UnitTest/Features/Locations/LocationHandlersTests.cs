@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Features.Locations.Commands;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using FluentAssertions;
 using Moq;
@@ -46,6 +46,7 @@ public class LocationHandlersTests
         };
 
         // Act
+        _locationRepoMock.Setup(x => x.IsLocationNameUniqueAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
@@ -79,6 +80,7 @@ public class LocationHandlersTests
         };
 
         // Act
+        _locationRepoMock.Setup(x => x.IsLocationNameUniqueAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert

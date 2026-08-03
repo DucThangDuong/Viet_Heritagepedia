@@ -5,33 +5,34 @@ namespace Domain.Entities;
 
 public partial class Location
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; private set; }
 
-    public string Slug { get; set; } = null!;
+    public string Slug { get; private set; } = null!;
 
-    public string Name { get; set; } = null!;
+    public string Name { get; private set; } = null!;
 
-    public string? VietnameseName { get; set; }
+    public string? VietnameseName { get; private set; }
 
-    public int Category { get; set; }
+    public int Category { get; private set; }
 
-    public string Region { get; set; } = null!;
+    public string Region { get; private set; } = null!;
 
-    public string Province { get; set; } = null!;
+    public string Province { get; private set; } = null!;
 
-    public string? Address { get; set; }
+    public string? Address { get; private set; }
 
-    public bool IsPlainRegion { get; set; }
+    public bool IsPlainRegion { get; private set; }
 
-    public int? UnescoYear { get; set; }
+    public int? UnescoYear { get; private set; }
 
-    public string? CoverImageUrl { get; set; }
+    public string? CoverImageUrl { get; private set; }
 
-    public bool IsFeatured { get; set; }
+    public bool IsFeatured { get; private set; }
 
-    public bool? IsActive { get; set; }
+    public bool? IsActive { get; private set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; private set; }
 
-    public virtual ICollection<Contribution> Contributions { get; set; } = new List<Contribution>();
+    private readonly List<Contribution> _contributions = new();
+    public virtual IReadOnlyCollection<Contribution> Contributions => _contributions.AsReadOnly();
 }

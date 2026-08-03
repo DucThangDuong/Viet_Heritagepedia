@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using API.Hubs;
 using Application.Contracts;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
@@ -36,18 +36,15 @@ public class LocationDocumentProcessedConsumer : IConsumer<LocationDocumentProce
 
         if (message.Status == "Success")
         {
-            var contribution = new Contribution
-            {
-                Id = Guid.NewGuid(),
-                LocationId = message.LocationId,
-                AuthorId = message.AuthorId,
-                ContributionType = 2,
-                Title = $"Tài liệu đóng góp ngày {DateTime.UtcNow:dd/MM/yyyy}",
-                WorkflowState = 0, 
-                NoSqlDocumentId = message.MongoDbId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var contribution = Contribution.CreateDraft(
+                locationId: message.LocationId,
+                authorId: message.AuthorId,
+                title: $"Tài liệu đóng góp ngày {DateTime.UtcNow:dd/MM/yyyy}",
+                summary: null,
+                sourceDocumentUrl: null,
+                noSqlDocumentId: message.MongoDbId,
+                type: Domain.Enums.ContributionType.CommunityArticle
+            );
 
             await _contributionRepo.AddAsync(contribution);
             await _unitOfWork.SaveChangesAsync(ct);

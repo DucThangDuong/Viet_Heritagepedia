@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
 using Application.DTOs;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using MediatR;
 
@@ -43,27 +43,19 @@ public class CreateLocationCommandHandler : IRequestHandler<CreateLocationComman
         if (!isUnique)
             return Result<LocationResponseDto>.Failure("ERR_LOCATION_NAME_EXISTS", 409);
 
-        var slug = string.IsNullOrWhiteSpace(request.Slug)
-            ? request.Name.ToLowerInvariant().Replace(" ", "-")
-            : request.Slug;
-
-        var entity = new Location
-        {
-            Id = Guid.NewGuid(),
-            Slug = slug,
-            Name = request.Name,
-            VietnameseName = request.VietnameseName,
-            Category = request.Category,
-            Region = string.IsNullOrWhiteSpace(request.Region) ? "Trung Bộ" : request.Region,
-            Province = string.IsNullOrWhiteSpace(request.Province) ? "Thừa Thiên Huế" : request.Province,
-            Address = request.Address,
-            IsPlainRegion = request.IsPlainRegion,
-            CoverImageUrl = request.CoverImageUrl,
-            IsFeatured = request.IsFeatured,
-            UnescoYear = request.UnescoYear,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
+        var entity = Location.Create(
+            name: request.Name,
+            slug: request.Slug,
+            vietnameseName: request.VietnameseName,
+            category: request.Category,
+            region: request.Region,
+            province: request.Province,
+            address: request.Address,
+            isPlainRegion: request.IsPlainRegion,
+            coverImageUrl: request.CoverImageUrl,
+            isFeatured: request.IsFeatured,
+            unescoYear: request.UnescoYear
+        );
 
         await _locationRepository.AddAsync(entity);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
