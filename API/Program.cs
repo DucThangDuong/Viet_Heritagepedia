@@ -1,3 +1,5 @@
+using API.Configurations;
+using API.Middlewares;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 
@@ -9,34 +11,29 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Register API, Infrastructure, and Application services directly in API layer
-        builder.Services.AddApiDependencies(builder.Configuration)
-                        .AddApiConfiguration(builder.Configuration);
-
-        // Register FastEndpoints & Swagger
-        builder.Services.AddFastEndpoints();
-        builder.Services.SwaggerDocument(o =>
-        {
-            o.DocumentSettings = s =>
-            {
-                s.Title = "Viet Heritagepedia API";
-                s.Version = "v1";
-                s.Description = "Hệ thống Backend Viet Heritagepedia - Quản lý di sản văn hóa Việt Nam.";
-            };
-        });
-
+        // --- Services ---
+        builder.Services.AddDatabaseConfiguration(builder.Configuration);
+        builder.Services.AddAuthConfiguration(builder.Configuration);
+        builder.Services.AddMessagingConfiguration(builder.Configuration);
+        builder.Services.AddStorageConfiguration(builder.Configuration);
+        builder.Services.AddWebConfiguration(builder.Configuration);
         var app = builder.Build();
-
+        // --- Middlewares ---
         var supportedCultures = new[] { "vi", "en" };
         var localizationOptions = new RequestLocalizationOptions()
             .SetDefaultCulture(supportedCultures[0])
             .AddSupportedCultures(supportedCultures)
             .AddSupportedUICultures(supportedCultures);
 
+        app.UseSecurityHeaders();
         app.UseRequestLocalization(localizationOptions);
 
         app.UseCors("CORS");
         app.UseHttpsRedirection();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.UseRateLimiter();
+        
         app.UseFastEndpoints(c => 
         {
             c.Errors.ResponseBuilder = (failures, ctx, statusCode) =>
@@ -58,6 +55,7 @@ public class Program
                 };
             };
         });
+        
         app.UseSwaggerGen();
         app.MapHub<API.Hubs.DocumentProcessingHub>("/hubs/document-processing");
 

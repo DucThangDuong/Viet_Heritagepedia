@@ -97,28 +97,13 @@ public class HeritageQueryService : IHeritageQueryService
 
         // 4. Process Type 2 (Community Articles)
         var communityContributions = contributions.Where(c => c.ContributionType == 2).ToList();
-        var communityDocs = new Dictionary<string, HeritageDetailDocument>();
-        
-        var mongoIds = communityContributions
-            .Where(c => !string.IsNullOrEmpty(c.NoSqlDocumentId))
-            .Select(c => ObjectId.Parse(c.NoSqlDocumentId))
-            .ToList();
-
-        if (mongoIds.Any())
-        {
-            var filter = Builders<HeritageDetailDocument>.Filter.In("_id", mongoIds);
-            var docs = await _collection.Find(filter).ToListAsync(ct);
-            foreach (var doc in docs)
-            {
-                communityDocs[doc.Id.ToString()] = doc;
-            }
-        }
 
         // 5. Build DTO
         var dto = new HeritageDetailDto
         {
-            Id = locationRow.IdStr,
-            Title = locationRow.Title,
+            Id = locationRow.IdStr ?? slug,
+            LocationId = locationId,
+            Title = locationRow.Title ?? string.Empty,
             VietnameseTitle = locationRow.VietnameseName,
             Category = locationRow.Category,
             CategoryName = GetCategoryName(locationRow.Category),
@@ -182,16 +167,6 @@ public class HeritageQueryService : IHeritageQueryService
                 AuthorName = string.IsNullOrEmpty(cc.AuthorName) ? "Ẩn danh" : cc.AuthorName,
                 AuthorAvatar = cc.AuthorAvatar
             };
-
-            if (!string.IsNullOrEmpty(cc.NoSqlDocumentId) && communityDocs.TryGetValue(cc.NoSqlDocumentId, out var cDoc))
-            {
-                articleDto.ContentHtml = cDoc.ContentHtml ?? string.Empty;
-                if (cDoc.Blocks != null)
-                {
-                    var jsonStr = cDoc.Blocks.ToJson();
-                    articleDto.Blocks = System.Text.Json.JsonSerializer.Deserialize<object>(jsonStr);
-                }
-            }
 
             dto.CommunityArticles.Add(articleDto);
         }
