@@ -1,7 +1,7 @@
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces.Auth;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Application.IServices;
 using Domain.Entities;
 using MediatR;
@@ -42,42 +42,33 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
         if (payload is null)
             return Result<AuthTokenResponse>.Failure("ERR_INVALID_GOOGLE_TOKEN", 401);
 
-        var existingProvider = await _userRepo.GetAuthProviderAsync("Google", payload.Subject, cancellationToken);
+        var user = await _userRepo.GetByAuthProviderAsync("Google", payload.Subject, cancellationToken);
+        var isNewUser = false;
 
-        User user;
-        if (existingProvider is not null)
+        if (user is null)
         {
-            user = existingProvider.User;
-        }
-        else
-        {
-            user = await _userRepo.GetByEmailAsync(payload.Email, cancellationToken)
-                   ?? new User
-                   {
-                       Id = Guid.NewGuid(),
-                       FullName = payload.Name ?? payload.Email.Split('@')[0],
-                       Email = payload.Email,
-                       AvatarUrl = payload.Picture,
-                       IsActive = true,
-                       IsEmailVerified = true,
-                       IsLocked = false,
-                       CreatedAt = DateTime.UtcNow,
-                       UpdatedAt = DateTime.UtcNow
-                   };
-
-            if (existingProvider is null)
-                await _userRepo.AddAsync(user);
-
-            var googleProvider = new UserAuthProvider
+            user = await _userRepo.GetByEmailAsync(payload.Email, cancellationToken);
+            if (user is null)
             {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                ProviderName = "Google",
-                ProviderKey = payload.Subject,
-                PasswordHash = null,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _userRepo.AddAuthProviderAsync(googleProvider, cancellationToken);
+                user = User.Create(
+                    email: payload.Email,
+                    fullName: payload.Name ?? payload.Email.Split('@')[0],
+                    avatarUrl: payload.Picture,
+                    role: "User"
+                );
+                isNewUser = true;
+            }
+
+            if (!user.IsEmailVerified)
+                user.VerifyEmail();
+
+            user.AddAuthProvider("Google", payload.Subject);
+
+            if (isNewUser)
+                await _userRepo.AddAsync(user);
+            else
+                _userRepo.Update(user);
+
             await _uow.SaveChangesAsync(cancellationToken);
         }
 

@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using MediatR;
 
@@ -43,7 +43,7 @@ public class PublishContributionCommandHandler : IRequestHandler<PublishContribu
         if (contribution.AuthorId != request.AuthorId)
             return Result.Failure("ERR_UNAUTHORIZED_PUBLISH", 403);
 
-        if (contribution.WorkflowState != 0)
+        if (contribution.StateEnum != Domain.Enums.ContributionWorkflowState.Draft)
             return Result.Failure("ERR_CONTRIBUTION_NOT_DRAFT", 400);
 
         var mongoDoc = await _mongoRepo.GetByIdAsync(contribution.NoSqlDocumentId!);
@@ -57,14 +57,11 @@ public class PublishContributionCommandHandler : IRequestHandler<PublishContribu
         if (!isTitleValid || !isContentValid)
             return Result.Failure("ERR_INVALID_DOCUMENT_CONTENT", 400);
 
-        contribution!.WorkflowState = 1;
-        contribution.UpdatedAt = DateTime.UtcNow;
+        contribution!.SubmitForReview();
         _contributionRepo.Update(contribution);
-        var outboxEvent = new OutboxMessage
-        {
-            Id = Guid.NewGuid(),
-            MessageType = "ContributionSubmittedEvent",
-            Payload = JsonSerializer.Serialize(new
+        var outboxEvent = new OutboxMessage(
+            "ContributionSubmittedEvent",
+            JsonSerializer.Serialize(new
             {
                 ContributionId = contribution.Id,
                 LocationId = contribution.LocationId,
@@ -72,10 +69,8 @@ public class PublishContributionCommandHandler : IRequestHandler<PublishContribu
                 Title = contribution.Title,
                 NoSqlDocumentId = contribution.NoSqlDocumentId,
                 SubmittedAt = DateTime.UtcNow
-            }),
-            CreatedAt = DateTime.UtcNow,
-            ProcessedAt = null
-        };
+            })
+        );
         await _outboxRepo.AddAsync(outboxEvent);
         await _unitOfWork.SaveChangesAsync(ct);
 

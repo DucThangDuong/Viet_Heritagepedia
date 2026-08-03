@@ -1,7 +1,7 @@
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces.Auth;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Application.IServices;
 using Domain.Entities;
 using MediatR;
@@ -30,11 +30,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthToke
 
     public async Task<Result<AuthTokenResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var provider = await _userRepo.GetAuthProviderAsync("Local", request.Email, cancellationToken);
-        if (provider is null || !VerifyPassword(request.Password, provider.PasswordHash))
+        var user = await _userRepo.GetByAuthProviderAsync("Local", request.Email, cancellationToken);
+        if (user is null)
             return Result<AuthTokenResponse>.Failure("ERR_INVALID_CREDENTIALS", 401);
 
-        var user = provider.User;
+        var provider = user.UserAuthProviders.FirstOrDefault(p => p.ProviderName == "Local" && p.ProviderKey == request.Email);
+        
+        if (provider is null || !VerifyPassword(request.Password, provider.PasswordHash))
+            return Result<AuthTokenResponse>.Failure("ERR_INVALID_CREDENTIALS", 401);
         if (!user.IsActive || user.IsLocked)
             return Result<AuthTokenResponse>.Failure("ERR_ACCOUNT_LOCKED", 403);
 

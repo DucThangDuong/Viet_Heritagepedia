@@ -1,5 +1,5 @@
 using Application.Interfaces.QueryServices;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Infrastructure.Persistence.MongoDb;
 using Infrastructure.Persistence.Queries;
 using Infrastructure.Persistence.SqlServer;

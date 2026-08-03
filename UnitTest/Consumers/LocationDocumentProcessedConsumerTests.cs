@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using API.Consumers;
 using API.Hubs;
 using Application.Contracts;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
@@ -64,12 +64,7 @@ public class LocationDocumentProcessedConsumerTests
         var consumeContextMock = new Mock<ConsumeContext<LocationDocumentProcessedEvent>>();
         consumeContextMock.Setup(c => c.Message).Returns(message);
 
-        var mongoDoc = new HeritageDetailDocument
-        {
-            Id = mongoId,
-            LocationId = locationId.ToString(),
-            ContentHtml = "<p>Test Content</p>"
-        };
+        var mongoDoc = HeritageDetailDocument.CreateCommunityArticle(locationId.ToString(), "<p>Test Content</p>");
 
         _mongoRepoMock.Setup(x => x.GetByIdAsync(mongoId))
             .ReturnsAsync(mongoDoc);

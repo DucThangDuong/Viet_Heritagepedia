@@ -17,7 +17,7 @@ public class OutboxProcessorWorker : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OutboxProcessorWorker> _logger;
 
-    private static readonly TimeSpan PollingInterval = TimeSpan.FromSeconds(500);
+    private static readonly TimeSpan PollingInterval = TimeSpan.FromSeconds(10);
     private const int BatchSize = 20;
 
     public OutboxProcessorWorker(IServiceScopeFactory scopeFactory, ILogger<OutboxProcessorWorker> logger)
@@ -69,7 +69,7 @@ public class OutboxProcessorWorker : BackgroundService
             {
                 await PublishEventAsync(publishEndpoint, message, ct);
 
-                message.ProcessedAt = DateTime.UtcNow;
+                message.MarkAsProcessed();
                 _logger.LogInformation(
                     "Outbox message {Id} ({Type}) published and marked as processed.",
                     message.Id, message.MessageType);

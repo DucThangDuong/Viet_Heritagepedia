@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Domain.Entities;
 using MediatR;
 using MongoDB.Bson;
@@ -45,30 +45,21 @@ public class SaveDraftCommandHandler : IRequestHandler<SaveDraftCommand, Result<
 
         if (request.ContributionId is null)
         {
-            var mongoDoc = new HeritageDetailDocument
-            {
-                Id = ObjectId.GenerateNewId().ToString(),
-                LocationId = request.LocationId.ToString(),
-                ContentHtml = request.Content.GetRawText(),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var mongoDoc = HeritageDetailDocument.CreateCommunityArticle(
+                locationId: request.LocationId.ToString(),
+                contentHtml: request.Content.GetRawText()
+            );
             await _mongoRepo.InsertAsync(mongoDoc);
             mongoId = mongoDoc.Id;
-            var contribution = new Contribution
-            {
-                Id = Guid.NewGuid(),
-                LocationId = request.LocationId,
-                AuthorId = request.AuthorId,
-                ContributionType = 2, 
-                Title = request.Title,
-                Summary = request.Summary,
-                WorkflowState = 0,
-                NoSqlDocumentId = mongoId,
-                Version = 1,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var contribution = Contribution.CreateDraft(
+                locationId: request.LocationId,
+                authorId: request.AuthorId,
+                title: request.Title,
+                summary: request.Summary,
+                sourceDocumentUrl: null,
+                noSqlDocumentId: mongoId,
+                type: Domain.Enums.ContributionType.CommunityArticle
+            );
 
             await _contributionRepo.AddAsync(contribution);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -91,21 +82,23 @@ public class SaveDraftCommandHandler : IRequestHandler<SaveDraftCommand, Result<
             var existingDoc = await _mongoRepo.GetByIdAsync(mongoId);
             if (existingDoc == null)
             {
-                existingDoc = new HeritageDetailDocument
-                {
-                    Id = mongoId,
-                    LocationId = contribution.LocationId.ToString(),
-                    CreatedAt = DateTime.UtcNow
-                };
+                existingDoc = HeritageDetailDocument.CreateCommunityArticle(
+                    locationId: contribution.LocationId.ToString(),
+                    contentHtml: request.Content.GetRawText()
+                );
+                await _mongoRepo.InsertAsync(existingDoc);
+                mongoId = existingDoc.Id;
             }
-            
-            existingDoc.ContentHtml = request.Content.GetRawText();
-            existingDoc.UpdatedAt = DateTime.UtcNow;
-            
-            await _mongoRepo.UpdateAsync(mongoId, existingDoc);
-            contribution.Title = request.Title;
-            contribution.Summary = request.Summary;
-            contribution.UpdatedAt = DateTime.UtcNow;
+            else
+            {
+                existingDoc.UpdateCommunityArticle(request.Content.GetRawText());
+                await _mongoRepo.UpdateAsync(mongoId, existingDoc);
+            }
+            contribution.UpdateContent(
+                title: request.Title,
+                summary: request.Summary,
+                noSqlDocumentId: null
+            );
             _contributionRepo.Update(contribution);
             await _unitOfWork.SaveChangesAsync(ct);
 

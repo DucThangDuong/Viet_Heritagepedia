@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Domain.Entities;
 
-namespace Application.Interfaces.Repositories;
+namespace Domain.Repositories;
 
 public interface ILocationRepository : IRepository<Location>
 {

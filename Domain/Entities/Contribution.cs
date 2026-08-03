@@ -5,35 +5,36 @@ namespace Domain.Entities;
 
 public partial class Contribution
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; private set; }
 
-    public Guid LocationId { get; set; }
+    public Guid LocationId { get; private set; }
 
-    public Guid AuthorId { get; set; }
+    public Guid AuthorId { get; private set; }
 
-    public int ContributionType { get; set; }
+    public int ContributionType { get; private set; }
 
-    public string Title { get; set; } = null!;
+    public string Title { get; private set; } = null!;
 
-    public string? Summary { get; set; }
+    public string? Summary { get; private set; }
 
-    public int LikesCount { get; set; }
+    public int LikesCount { get; private set; }
 
-    public int WorkflowState { get; set; }
+    public int WorkflowState { get; private set; }
 
-    public string? SourceDocumentUrl { get; set; }
+    public string? SourceDocumentUrl { get; private set; }
 
-    public string? NoSqlDocumentId { get; set; }
+    public string? NoSqlDocumentId { get; private set; }
 
-    public int? Version { get; set; }
+    public int? Version { get; private set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; private set; }
 
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; private set; }
 
-    public virtual User Author { get; set; } = null!;
+    public virtual User Author { get; private set; } = null!;
 
-    public virtual ICollection<ContributionLike> ContributionLikes { get; set; } = new List<ContributionLike>();
+    private readonly List<ContributionLike> _contributionLikes = new();
+    public virtual IReadOnlyCollection<ContributionLike> ContributionLikes => _contributionLikes.AsReadOnly();
 
-    public virtual Location Location { get; set; } = null!;
+    public virtual Location Location { get; private set; } = null!;
 }

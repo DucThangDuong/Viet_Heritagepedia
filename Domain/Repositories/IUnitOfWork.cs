@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Application.Interfaces.Repositories;
+namespace Domain.Repositories;
 
 public interface IUnitOfWork
 {

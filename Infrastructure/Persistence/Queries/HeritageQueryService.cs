@@ -27,7 +27,7 @@ public class HeritageQueryService : IHeritageQueryService
         _sqlContext = sqlContext;
     }
 
-    public class LocationRow
+    private class LocationRow
     {
         public Guid Id { get; set; }
         public string IdStr { get; set; } = string.Empty;
@@ -45,7 +45,7 @@ public class HeritageQueryService : IHeritageQueryService
         public double? Lng { get; set; }
     }
 
-    public class ContributionRow
+    private class ContributionRow
     {
         public Guid Id { get; set; }
         public int ContributionType { get; set; }

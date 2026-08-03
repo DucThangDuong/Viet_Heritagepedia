@@ -12,6 +12,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace API.Endpoints.Documents;
 
@@ -58,8 +59,7 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
             x.RequireRateLimiting("UploadLimit");
             x.AddEndpointFilter(async (context, next) =>
             {
-                // Enforce 15MB limit at the endpoint filter level if needed, or rely on Kestrel
-                context.HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 15_728_640;
+                context.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 15_728_640;
                 return await next(context);
             });
         });
@@ -86,7 +86,6 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
             return;
         }
 
-        // Validate Magic Bytes (File Header Signature) to prevent extension spoofing
         using var stream = req.File.OpenReadStream();
         var isValidSignature = await _fileStorageService.ValidateMagicBytesAsync(stream, fileExt, ct);
 
@@ -99,11 +98,7 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
 
         var jobId = Guid.NewGuid();
         var savedFileName = $"{jobId}{fileExt}";
-
-        // Save file to storage via clean architecture IFileStorageService abstraction
         var fullPath = await _fileStorageService.SaveFileAsync(stream, savedFileName, ct);
-
-        // Publish conversion command to MassTransit / RabbitMQ
         await _publishEndpoint.Publish(new ProcessLocationDocumentCommand
         {
             JobId = jobId,

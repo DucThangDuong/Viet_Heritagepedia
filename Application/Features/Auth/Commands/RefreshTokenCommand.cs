@@ -1,7 +1,7 @@
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces.Auth;
-using Application.Interfaces.Repositories;
+using Domain.Repositories;
 using Application.IServices;
 using MediatR;
 using System.Threading;
