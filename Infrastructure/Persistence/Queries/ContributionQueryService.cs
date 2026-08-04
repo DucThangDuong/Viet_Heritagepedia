@@ -93,4 +93,70 @@ public class ContributionQueryService : IContributionQueryService
 
         return dto;
     }
+
+    public async Task<IEnumerable<MyContributionListDto>> GetAllContributionsAsync(CancellationToken ct = default)
+    {
+        var connection = _sqlContext.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(ct);
+        }
+
+        const string sql = @"
+            SELECT c.Id, c.LocationId, l.Name as LocationName, c.Title, c.Summary, c.WorkflowState, c.CreatedAt, c.UpdatedAt
+            FROM Contributions c
+            LEFT JOIN Locations l ON c.LocationId = l.Id
+            ORDER BY c.UpdatedAt DESC";
+
+        return await connection.QueryAsync<MyContributionListDto>(sql);
+    }
+
+    public async Task<MyContributionDetailDto?> GetContributionDetailAsync(Guid contributionId, CancellationToken ct = default)
+    {
+        var connection = _sqlContext.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(ct);
+        }
+
+        const string sql = @"
+            SELECT c.Id, c.LocationId, l.Name as LocationName, c.Title, c.Summary, c.WorkflowState, c.CreatedAt, c.UpdatedAt, c.NoSqlDocumentId
+            FROM Contributions c
+            LEFT JOIN Locations l ON c.LocationId = l.Id
+            WHERE c.Id = @ContributionId";
+
+        var row = await connection.QueryFirstOrDefaultAsync(sql, new { ContributionId = contributionId });
+
+        if (row == null) return null;
+
+        var dto = new MyContributionDetailDto
+        {
+            Id = row.Id,
+            LocationId = row.LocationId,
+            LocationName = row.LocationName ?? string.Empty,
+            Title = row.Title ?? string.Empty,
+            Summary = row.Summary ?? string.Empty,
+            WorkflowState = row.WorkflowState,
+            CreatedAt = row.CreatedAt,
+            UpdatedAt = row.UpdatedAt
+        };
+
+        string noSqlDocumentId = row.NoSqlDocumentId ?? string.Empty;
+        if (!string.IsNullOrEmpty(noSqlDocumentId))
+        {
+            var filter = Builders<HeritageDetailDocument>.Filter.Eq("_id", ObjectId.Parse(noSqlDocumentId));
+            var doc = await _collection.Find(filter).FirstOrDefaultAsync(ct);
+            if (doc != null)
+            {
+                dto.ContentHtml = doc.ContentHtml ?? string.Empty;
+                if (doc.Blocks != null)
+                {
+                    var jsonStr = doc.Blocks.ToJson();
+                    dto.Blocks = System.Text.Json.JsonSerializer.Deserialize<object>(jsonStr);
+                }
+            }
+        }
+
+        return dto;
+    }
 }

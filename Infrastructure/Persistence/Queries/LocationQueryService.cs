@@ -39,6 +39,25 @@ public class LocationQueryService : ILocationQueryService
         return await connection.QueryFirstOrDefaultAsync<LocationResponseDto>(command);
     }
 
+    public async Task<List<LocationResponseDto>> GetAllLocationsAsync(CancellationToken ct = default)
+    {
+        const string sql = @"
+            SELECT Id, Slug, Name, VietnameseName, Category, Region, Province, Address, IsPlainRegion, CoverImageUrl, IsFeatured, UnescoYear, IsActive, CreatedAt 
+            FROM Locations 
+            ORDER BY CreatedAt DESC";
+
+        var connection = _context.Database.GetDbConnection();
+
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(ct);
+        }
+
+        var command = new CommandDefinition(sql, cancellationToken: ct);
+        var result = await connection.QueryAsync<LocationResponseDto>(command);
+        return result.ToList();
+    }
+
     public async Task<List<NearbyLocationDto>> GetNearbyLocationsAsync(double latitude, double longitude, double radiusInKm, CancellationToken ct = default)
     {
         const string sql = @"

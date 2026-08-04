@@ -34,12 +34,12 @@ public class UploadLocationDocumentResponse
 
 public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentRequest, UploadLocationDocumentResponse>
 {
-    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ISendEndpointProvider _sendEndpointProvider;
     private readonly IFileStorageService _fileStorageService;
 
-    public UploadLocationDocumentEndpoint(IPublishEndpoint publishEndpoint, IFileStorageService fileStorageService)
+    public UploadLocationDocumentEndpoint(ISendEndpointProvider sendEndpointProvider, IFileStorageService fileStorageService)
     {
-        _publishEndpoint = publishEndpoint;
+        _sendEndpointProvider = sendEndpointProvider;
         _fileStorageService = fileStorageService;
     }
 
@@ -59,7 +59,7 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
             x.RequireRateLimiting("UploadLimit");
             x.AddEndpointFilter(async (context, next) =>
             {
-                context.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 15_728_640;
+                context.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = 5_242_880;
                 return await next(context);
             });
         });
@@ -68,10 +68,16 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
     public override async Task HandleAsync(UploadLocationDocumentRequest req, CancellationToken ct)
     {
 
-
+        // kiểm tra file người dùng gửi lên
         if (req.File == null || req.File.Length == 0)
         {
             var fail = Result<UploadLocationDocumentResponse>.Failure("ERR_FILE_REQUIRED", 400);
+            await this.SendApiResponseAsync(fail, ct);
+            return;
+        }
+        if (req.File.Length > 5_242_880)
+        {
+            var fail = Result<UploadLocationDocumentResponse>.Failure("ERR_FILE_TOO_LARGE", 400);
             await this.SendApiResponseAsync(fail, ct);
             return;
         }
@@ -85,7 +91,6 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
             await this.SendApiResponseAsync(fail, ct);
             return;
         }
-
         using var stream = req.File.OpenReadStream();
         var isValidSignature = await _fileStorageService.ValidateMagicBytesAsync(stream, fileExt, ct);
 
@@ -99,7 +104,8 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
         var jobId = Guid.NewGuid();
         var savedFileName = $"{jobId}{fileExt}";
         var fullPath = await _fileStorageService.SaveFileAsync(stream, savedFileName, ct);
-        await _publishEndpoint.Publish(new ProcessLocationDocumentCommand
+        var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:pdf_conversion_queue"));
+        await sendEndpoint.Send(new ProcessLocationDocumentCommand
         {
             JobId = jobId,
             LocationId = req.LocationId,

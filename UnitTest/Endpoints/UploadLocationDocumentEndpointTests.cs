@@ -19,13 +19,15 @@ public class UploadLocationDocumentEndpointTests
 {
     private readonly Mock<IPublishEndpoint> _publishEndpointMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
+    private readonly Mock<ISendEndpointProvider> _sendEndpointProviderMock;
     private readonly UploadLocationDocumentEndpoint _endpoint;
 
     public UploadLocationDocumentEndpointTests()
     {
         _publishEndpointMock = new Mock<IPublishEndpoint>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
-        _endpoint = new UploadLocationDocumentEndpoint(_publishEndpointMock.Object, _fileStorageServiceMock.Object);
+        _sendEndpointProviderMock = new Mock<ISendEndpointProvider>();
+        _endpoint = new UploadLocationDocumentEndpoint(_sendEndpointProviderMock.Object, _fileStorageServiceMock.Object);
     }
 
     private static IFormFile CreateMockFormFile(string fileName, byte[] content)

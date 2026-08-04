@@ -43,7 +43,6 @@ public class HeritageDetailDocument
     [BsonElement("practicalInfo")]
     public PracticalInfo? PracticalInfo { get; private set; }
 
-    // Fields for ContributionType = 2 (Community Article)
     [BsonElement("contentHtml")]
     public string? ContentHtml { get; private set; }
 
@@ -73,6 +72,23 @@ public class HeritageDetailDocument
     public void UpdateCommunityArticle(string contentHtml)
     {
         ContentHtml = contentHtml;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    public static HeritageDetailDocument CreateMainArticle(string locationId, string fullDescription)
+    {
+        return new HeritageDetailDocument
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+            LocationId = locationId,
+            FullDescription = fullDescription,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
+
+    public void UpdateMainArticle(string fullDescription)
+    {
+        FullDescription = fullDescription;
         UpdatedAt = DateTime.UtcNow;
     }
 }

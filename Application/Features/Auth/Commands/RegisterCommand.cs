@@ -33,7 +33,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Gu
             email: request.Email,
             fullName: request.FullName,
             avatarUrl: null,
-            role: "User"
+            role: "Member"
         );
 
         user.AddAuthProvider("Local", request.Email, HashPassword(request.Password));
