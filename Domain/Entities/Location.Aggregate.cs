@@ -48,7 +48,6 @@ public partial class Location
     {
         IsFeatured = isFeatured;
     }
-
     public void UpdateFull(
         string name, 
         string? slug, 

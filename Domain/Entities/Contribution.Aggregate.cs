@@ -73,7 +73,6 @@ public partial class Contribution
 
         return contribution;
     }
-
     public void UpdateContent(string title, string? summary, string? noSqlDocumentId)
     {
         if (StateEnum != ContributionWorkflowState.Draft && StateEnum != ContributionWorkflowState.Rejected)

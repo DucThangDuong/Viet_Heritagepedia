@@ -74,7 +74,6 @@ public class HeritageDetailDocument
         ContentHtml = contentHtml;
         UpdatedAt = DateTime.UtcNow;
     }
-
     public static HeritageDetailDocument CreateMainArticle(string locationId, string fullDescription)
     {
         return new HeritageDetailDocument

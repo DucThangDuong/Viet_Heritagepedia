@@ -91,7 +91,6 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
             await this.SendApiResponseAsync(fail, ct);
             return;
         }
-        // gửi vào storage
         using var stream = req.File.OpenReadStream();
         var isValidSignature = await _fileStorageService.ValidateMagicBytesAsync(stream, fileExt, ct);
 
@@ -105,7 +104,6 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
         var jobId = Guid.NewGuid();
         var savedFileName = $"{jobId}{fileExt}";
         var fullPath = await _fileStorageService.SaveFileAsync(stream, savedFileName, ct);
-        // đưa vào messagequeue để kiểm tra và generage ra json
         var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:pdf_conversion_queue"));
         await sendEndpoint.Send(new ProcessLocationDocumentCommand
         {
