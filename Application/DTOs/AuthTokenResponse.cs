@@ -1,9 +1,10 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace Application.DTOs;
 
 public record AuthTokenResponse(
     string AccessToken,
-    string RefreshToken,
-    DateTime RefreshTokenExpiryTime
+    [property: JsonIgnore] string RefreshToken,
+    [property: JsonIgnore] DateTime RefreshTokenExpiryTime
 );

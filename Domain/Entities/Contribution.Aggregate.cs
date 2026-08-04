@@ -49,6 +49,31 @@ public partial class Contribution
         return contribution;
     }
 
+    public static Contribution CreateMainArticle(
+        Guid locationId, 
+        Guid authorId, 
+        string title, 
+        string? noSqlDocumentId)
+    {
+        var contribution = new Contribution
+        {
+            Id = Guid.NewGuid(),
+            LocationId = locationId,
+            AuthorId = authorId,
+            Title = title,
+            Summary = "",
+            NoSqlDocumentId = noSqlDocumentId,
+            LikesCount = 0,
+            Version = 1,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        contribution.StateEnum = ContributionWorkflowState.Approved; 
+        contribution.TypeEnum = Domain.Enums.ContributionType.MainContent;
+
+        return contribution;
+    }
+
     public void UpdateContent(string title, string? summary, string? noSqlDocumentId)
     {
         if (StateEnum != ContributionWorkflowState.Draft && StateEnum != ContributionWorkflowState.Rejected)
@@ -58,6 +83,19 @@ public partial class Contribution
 
         Title = title;
         Summary = summary;
+        if (!string.IsNullOrEmpty(noSqlDocumentId))
+        {
+            NoSqlDocumentId = noSqlDocumentId;
+        }
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateMainContent(string? noSqlDocumentId)
+    {
+        if (TypeEnum != Domain.Enums.ContributionType.MainContent)
+        {
+            throw new InvalidOperationException("Chỉ có thể dùng cho bài viết chính.");
+        }
         if (!string.IsNullOrEmpty(noSqlDocumentId))
         {
             NoSqlDocumentId = noSqlDocumentId;

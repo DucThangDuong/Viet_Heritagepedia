@@ -48,4 +48,35 @@ public partial class Location
     {
         IsFeatured = isFeatured;
     }
+
+    public void UpdateFull(
+        string name, 
+        string? slug, 
+        string? vietnameseName, 
+        int category, 
+        string region, 
+        string province, 
+        string? address, 
+        bool isPlainRegion, 
+        string? coverImageUrl, 
+        bool isFeatured, 
+        int? unescoYear)
+    {
+        Name = name;
+        if (!string.IsNullOrWhiteSpace(slug)) Slug = slug;
+        VietnameseName = vietnameseName;
+        Category = category;
+        if (!string.IsNullOrWhiteSpace(region)) Region = region;
+        if (!string.IsNullOrWhiteSpace(province)) Province = province;
+        Address = address;
+        IsPlainRegion = isPlainRegion;
+        CoverImageUrl = coverImageUrl;
+        IsFeatured = isFeatured;
+        UnescoYear = unescoYear;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+    }
 }

@@ -54,12 +54,10 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
                     email: payload.Email,
                     fullName: payload.Name ?? payload.Email.Split('@')[0],
                     avatarUrl: payload.Picture,
-                    role: "User"
+                    role: "Member"
                 );
                 isNewUser = true;
             }
-
-            if (!user.IsEmailVerified)
                 user.VerifyEmail();
 
             user.AddAuthProvider("Google", payload.Subject);
@@ -75,7 +73,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
         if (!user.IsActive || user.IsLocked)
             return Result<AuthTokenResponse>.Failure("ERR_ACCOUNT_LOCKED", 403);
 
-        var accessToken = _jwt.GenerateAccessToken(user.Id, user.Role ?? "Thành viên");
+        var accessToken = _jwt.GenerateAccessToken(user.Id, user.Role ?? "Member");
         var refresh = _jwt.GenerateRefreshToken();
         await _tokenCache.StoreRefreshTokenAsync(
             user.Id, refresh.Token, refresh.ExpiryDate - DateTime.UtcNow, cancellationToken);

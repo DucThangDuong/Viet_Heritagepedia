@@ -83,8 +83,7 @@ public class LocationDocumentProcessedConsumerTests
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
-        // 2. Verify MongoDB is queried
-        _mongoRepoMock.Verify(x => x.GetByIdAsync(mongoId), Times.Once);
+        // 2. Removed MongoDB query verification because the payload no longer includes mongoDoc
 
         // 3. Verify SignalR broadcast
         _clientProxyMock.Verify(x => x.SendCoreAsync("ReceiveLocationDocumentResult", 

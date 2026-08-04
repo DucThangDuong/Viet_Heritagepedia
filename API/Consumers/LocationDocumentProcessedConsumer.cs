@@ -49,16 +49,14 @@ public class LocationDocumentProcessedConsumer : IConsumer<LocationDocumentProce
             await _contributionRepo.AddAsync(contribution);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            var mongoDoc = await _mongoRepo.GetByIdAsync(message.MongoDbId);
-
             string jobIdGroup = message.JobId.ToString();
             await _hubContext.Clients.Group(jobIdGroup).SendAsync("ReceiveLocationDocumentResult", new
             {
                 JobId = message.JobId,
                 LocationId = message.LocationId,
                 ContributionId = contribution.Id,
-                Status = "Success",
-                ExtractedData = mongoDoc
+                MongoDbId = message.MongoDbId,
+                Status = "Success"
             }, ct);
         }
         else

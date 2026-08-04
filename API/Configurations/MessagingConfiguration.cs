@@ -1,3 +1,4 @@
+using API.BackgroundServices;
 using Application.Common;
 using Application.Interfaces.QueryServices;
 using Infrastructure.BackgroundJobs;
@@ -41,8 +42,14 @@ public static class MessagingConfiguration
             });
         });
 
+        // Redis
+        var redisConnString = configuration["Redis:ConnectionString"] ?? "localhost:6379";
+        services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp => 
+            StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnString));
+
         // Background Jobs
         services.AddHostedService<OutboxProcessorWorker>();
+        services.AddHostedService<RedisSubscriberService>();
 
         return services;
     }

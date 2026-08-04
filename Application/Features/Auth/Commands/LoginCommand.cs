@@ -46,7 +46,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthToke
 
     private async Task<Result<AuthTokenResponse>> IssueTokensAsync(User user, CancellationToken ct)
     {
-        var accessToken = _jwt.GenerateAccessToken(user.Id, user.Role ?? "Thành viên");
+        var accessToken = _jwt.GenerateAccessToken(user.Id, user.Role ?? "Member");
         var refresh = _jwt.GenerateRefreshToken();
 
         await _tokenCache.StoreRefreshTokenAsync(

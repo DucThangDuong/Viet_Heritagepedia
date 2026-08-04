@@ -54,7 +54,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         await _tokenCache.RevokeRefreshTokenAsync(request.RefreshToken, TimeSpan.FromDays(7), cancellationToken);
 
-        var newAccessToken = _jwt.GenerateAccessToken(user.Id, user.Role ?? "Thành viên");
+        var newAccessToken = _jwt.GenerateAccessToken(user.Id, user.Role ?? "Member");
         var newRefresh = _jwt.GenerateRefreshToken();
         await _tokenCache.StoreRefreshTokenAsync(
             user.Id, newRefresh.Token, newRefresh.ExpiryDate - DateTime.UtcNow, cancellationToken);
