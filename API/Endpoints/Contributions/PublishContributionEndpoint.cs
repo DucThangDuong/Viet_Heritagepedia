@@ -25,6 +25,9 @@ public class PublishContributionRequestValidator : Validator<PublishContribution
     {
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("ERR_CONTRIBUTION_ID_REQUIRED");
+            
+        RuleFor(x => x.AuthorId)
+            .NotEmpty().WithMessage("ERR_UNAUTHORIZED_CLAIM");
     }
 }
 
@@ -38,6 +41,7 @@ public class PublishContributionEndpoint : Endpoint<PublishContributionRequest>
     {
         Post("/api/contributions/{Id}/publish");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
+        Options(x => x.RequireRateLimiting("authenticated_strict"));
         Summary(s =>
         {
             s.Summary = "Publish a draft contribution (transitions WorkflowState 0 → 1)";

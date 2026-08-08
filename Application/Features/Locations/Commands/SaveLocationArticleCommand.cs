@@ -91,7 +91,14 @@ public class SaveLocationArticleCommandHandler : IRequestHandler<SaveLocationArt
             _contributionRepo.Update(mainContribution);
         }
 
-        await _unitOfWork.SaveChangesAsync(ct);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (Exception ex) when (ex.GetType().Name.Contains("ConcurrencyException"))
+        {
+            return Result<bool>.Failure("ERR_CONCURRENCY_CONFLICT", 409);
+        }
         return Result<bool>.Success(true, 200);
     }
 }

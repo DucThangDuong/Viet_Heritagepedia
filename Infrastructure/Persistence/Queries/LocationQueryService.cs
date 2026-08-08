@@ -30,11 +30,6 @@ public class LocationQueryService : ILocationQueryService
 
         var connection = _context.Database.GetDbConnection();
 
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
-
         var command = new CommandDefinition(sql, new { Id = id }, cancellationToken: ct);
         return await connection.QueryFirstOrDefaultAsync<LocationResponseDto>(command);
     }
@@ -47,11 +42,6 @@ public class LocationQueryService : ILocationQueryService
             ORDER BY CreatedAt DESC";
 
         var connection = _context.Database.GetDbConnection();
-
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         var command = new CommandDefinition(sql, cancellationToken: ct);
         var result = await connection.QueryAsync<LocationResponseDto>(command);
@@ -72,11 +62,6 @@ public class LocationQueryService : ILocationQueryService
             GROUP BY l.Id, l.Name, l.Category";
 
         var connection = _context.Database.GetDbConnection();
-
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         var command = new CommandDefinition(sql, cancellationToken: ct);
         var result = await connection.QueryAsync<NearbyLocationDto>(command);

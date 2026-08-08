@@ -38,10 +38,9 @@ public class RegisterRequestValidator : Validator<RegisterRequest>
     }
 }
 
-public class RegisterEndpoint : Endpoint<RegisterRequest>
+public class RegisterEndpoint : Endpoint<RegisterRequest, API.DTOs.ApiSuccessResponse<System.Guid>>
 {
     public IMediator Mediator { get; set; } = null!;
-    public IStringLocalizer<SharedResource> Localizer { get; set; } = null!;
 
     public override void Configure()
     {

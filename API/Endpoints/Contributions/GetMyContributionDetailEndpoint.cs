@@ -2,11 +2,13 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using API.DTOs;
 using API.Extensions;
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces.QueryServices;
 using FastEndpoints;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace API.Endpoints.Contributions;
@@ -19,7 +21,19 @@ public class GetMyContributionDetailRequest
     public Guid UserId { get; set; }
 }
 
-public class GetMyContributionDetailEndpoint : Endpoint<GetMyContributionDetailRequest, MyContributionDetailDto>
+public class GetMyContributionDetailRequestValidator : Validator<GetMyContributionDetailRequest>
+{
+    public GetMyContributionDetailRequestValidator()
+    {
+        RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("ERR_UNAUTHORIZED_CLAIM");
+            
+        RuleFor(x => x.Id)
+            .NotEmpty().WithMessage("ERR_INVALID_ID");
+    }
+}
+
+public class GetMyContributionDetailEndpoint : Endpoint<GetMyContributionDetailRequest, ApiSuccessResponse<MyContributionDetailDto>>
 {
     private readonly IContributionQueryService _queryService;
 
@@ -32,6 +46,7 @@ public class GetMyContributionDetailEndpoint : Endpoint<GetMyContributionDetailR
     {
         Get("/api/my-contributions/{id}");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
+        Options(x => x.RequireRateLimiting("authenticated_strict"));
         Summary(s =>
         {
             s.Summary = "Get full details of a specific contribution by the current user";

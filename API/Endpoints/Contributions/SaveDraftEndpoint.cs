@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using API.DTOs;
 using API.Extensions;
 using Application.Common;
 using Application.Features.Contributions.Commands;
@@ -31,14 +32,17 @@ public class SaveDraftValidator : Validator<SaveDraftRequest>
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("ERR_TITLE_REQUIRED")
             .MaximumLength(255).WithMessage("ERR_TITLE_MAX_LENGTH")
-            .Matches(@"^[\p{L}\p{N}\s.,'-]+$").WithMessage("Tên chứa ký tự không hợp lệ");
+            .Matches(@"^[\p{L}\p{N}\s.,'-]+$").WithMessage("ERR_TITLE_INVALID_CHARACTERS");
             
         RuleFor(x => x.Summary)
-            .MaximumLength(2000).WithMessage("Summary quá dài");
+            .MaximumLength(2000).WithMessage("ERR_SUMMARY_MAX_LENGTH");
 
         RuleFor(x => x.Content)
             .Must(c => c.ValueKind == JsonValueKind.Object)
             .WithMessage("ERR_CONTENT_INVALID_JSON");
+            
+        RuleFor(x => x.AuthorId)
+            .NotEmpty().WithMessage("ERR_UNAUTHORIZED_CLAIM");
     }
 }
 

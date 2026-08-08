@@ -8,4 +8,5 @@ public interface IFileStorageService
 {
     Task<bool> ValidateMagicBytesAsync(Stream fileStream, string fileExtension, CancellationToken ct = default);
     Task<string> SaveFileAsync(Stream fileStream, string targetFileName, CancellationToken ct = default);
+    Task DeleteFileAsync(string targetFileName, CancellationToken ct = default);
 }

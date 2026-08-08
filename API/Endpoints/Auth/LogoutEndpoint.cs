@@ -6,14 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
 
 namespace API.Endpoints.Auth;
-
-public class LogoutRequest
-{
-    [FromClaim(ClaimTypes.NameIdentifier)]
-    public Guid UserId { get; set; }
-}
-
-public class LogoutEndpoint : Endpoint<LogoutRequest>
+public class LogoutEndpoint : EndpointWithoutRequest
 {
     public IMediator Mediator { get; set; } = null!;
 
@@ -21,6 +14,7 @@ public class LogoutEndpoint : Endpoint<LogoutRequest>
     {
         Post("/api/auth/logout");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
+        Options(x => x.RequireRateLimiting("auth_strict"));
         Summary(s =>
         {
             s.Summary = "Logout the current user";
@@ -28,14 +22,14 @@ public class LogoutEndpoint : Endpoint<LogoutRequest>
         });
     }
 
-    public override async Task HandleAsync(LogoutRequest req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
 
-        var accessToken = HttpContext.Request.Headers["Authorization"]
-            .FirstOrDefault()?.Replace("Bearer ", "");
+        var accessToken = HttpContext.Request.Headers[Microsoft.Net.Http.Headers.HeaderNames.Authorization]
+            .FirstOrDefault()?.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase);
         var refreshToken = HttpContext.Request.Cookies["refreshToken"];
 
-        var result = await Mediator.Send(new LogoutCommand(req.UserId, accessToken, refreshToken), ct);
+        var result = await Mediator.Send(new LogoutCommand(accessToken, refreshToken), ct);
 
         if (result.IsSuccess)
         {
@@ -44,7 +38,6 @@ public class LogoutEndpoint : Endpoint<LogoutRequest>
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Expires = DateTimeOffset.UtcNow.AddDays(-1),
                 IsEssential = true
             });
         }

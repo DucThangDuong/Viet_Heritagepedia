@@ -72,8 +72,14 @@ public class PublishContributionCommandHandler : IRequestHandler<PublishContribu
             })
         );
         await _outboxRepo.AddAsync(outboxEvent);
-        await _unitOfWork.SaveChangesAsync(ct);
-
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (Exception ex) when (ex.GetType().Name.Contains("ConcurrencyException"))
+        {
+            return Result.Failure("ERR_CONCURRENCY_CONFLICT", 409);
+        }
         return Result.Success(200);
     }
 }

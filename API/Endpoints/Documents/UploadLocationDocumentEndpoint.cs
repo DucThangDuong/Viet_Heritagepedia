@@ -32,7 +32,7 @@ public class UploadLocationDocumentResponse
     public string Message { get; set; } = string.Empty;
 }
 
-public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentRequest, UploadLocationDocumentResponse>
+public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentRequest, API.DTOs.ApiSuccessResponse<UploadLocationDocumentResponse>>
 {
     private readonly ISendEndpointProvider _sendEndpointProvider;
     private readonly IFileStorageService _fileStorageService;
@@ -47,6 +47,7 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
     {
         Post("/api/locations/{LocationId}/documents");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
+        Roles("Admin", "Manager");
         AllowFileUploads();
         Summary(s =>
         {
@@ -67,7 +68,6 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
 
     public override async Task HandleAsync(UploadLocationDocumentRequest req, CancellationToken ct)
     {
-
         // kiểm tra file người dùng gửi lên
         if (req.File == null || req.File.Length == 0)
         {
@@ -104,17 +104,27 @@ public class UploadLocationDocumentEndpoint : Endpoint<UploadLocationDocumentReq
         var jobId = Guid.NewGuid();
         var savedFileName = $"{jobId}{fileExt}";
         var fullPath = await _fileStorageService.SaveFileAsync(stream, savedFileName, ct);
-        var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:pdf_conversion_queue"));
-        await sendEndpoint.Send(new ProcessLocationDocumentCommand
+        try
         {
-            JobId = jobId,
-            LocationId = req.LocationId,
-            AuthorId = req.AuthorId,
-            FileName = req.File.FileName,
-            FilePath = fullPath,
-            FileType = fileExt.TrimStart('.'),
-            UploadedAt = DateTime.UtcNow
-        }, ct);
+            var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:pdf_conversion_queue"));
+            await sendEndpoint.Send(new ProcessLocationDocumentCommand
+            {
+                JobId = jobId,
+                LocationId = req.LocationId,
+                AuthorId = req.AuthorId,
+                FileName = req.File.FileName,
+                FilePath = fullPath,
+                FileType = fileExt.TrimStart('.'),
+                UploadedAt = DateTime.UtcNow
+            }, ct);
+        }
+        catch
+        {
+            await _fileStorageService.DeleteFileAsync(fullPath, ct);
+            var mqFail = Result<UploadLocationDocumentResponse>.Failure("ERR_PROCESSING_SERVICE_UNAVAILABLE", 503);
+            await this.SendApiResponseAsync(mqFail, ct);
+            return;
+        }
 
         var response = new UploadLocationDocumentResponse
         {

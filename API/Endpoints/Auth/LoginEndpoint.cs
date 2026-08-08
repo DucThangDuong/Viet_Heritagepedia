@@ -29,11 +29,9 @@ public class LoginRequestValidator : Validator<LoginRequest>
     }
 }
 
-public class LoginEndpoint : Endpoint<LoginRequest>
+public class LoginEndpoint : Endpoint<LoginRequest, API.DTOs.ApiSuccessResponse<Application.DTOs.AuthTokenResponse>>
 {
     public IMediator Mediator { get; set; } = null!;
-    public IStringLocalizer<SharedResource> Localizer { get; set; } = null!;
-
     public override void Configure()
     {
         Post("/api/auth/login");
@@ -57,7 +55,7 @@ public class LoginEndpoint : Endpoint<LoginRequest>
                 HttpOnly = true,
                 Expires = result.Data.RefreshTokenExpiryTime,
                 Secure = true,
-                SameSite = SameSiteMode.None,
+                SameSite = SameSiteMode.Lax,
                 IsEssential = true
             });
         }

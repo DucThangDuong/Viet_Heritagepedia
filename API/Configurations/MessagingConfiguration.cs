@@ -1,12 +1,6 @@
 using API.BackgroundServices;
 using Application.Common;
-using Application.Interfaces.QueryServices;
-using Infrastructure.BackgroundJobs;
-using Infrastructure.Persistence.Queries;
 using MassTransit;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace API.Configurations;
 
@@ -48,7 +42,6 @@ public static class MessagingConfiguration
             StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnString));
 
         // Background Jobs
-        services.AddHostedService<OutboxProcessorWorker>();
         services.AddHostedService<RedisSubscriberService>();
 
         return services;

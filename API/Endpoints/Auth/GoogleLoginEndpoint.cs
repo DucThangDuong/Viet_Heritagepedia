@@ -20,7 +20,7 @@ public class GoogleLoginRequestValidator : Validator<GoogleLoginRequest>
     }
 }
 
-public class GoogleLoginEndpoint : Endpoint<GoogleLoginRequest>
+public class GoogleLoginEndpoint : Endpoint<GoogleLoginRequest, API.DTOs.ApiSuccessResponse<Application.DTOs.AuthTokenResponse>>
 {
     public IMediator Mediator { get; set; } = null!;
 
@@ -47,7 +47,7 @@ public class GoogleLoginEndpoint : Endpoint<GoogleLoginRequest>
                 HttpOnly = true,
                 Expires = result.Data.RefreshTokenExpiryTime,
                 Secure = true,
-                SameSite = SameSiteMode.None,
+                SameSite = SameSiteMode.Lax,
                 IsEssential = true
             });
         }

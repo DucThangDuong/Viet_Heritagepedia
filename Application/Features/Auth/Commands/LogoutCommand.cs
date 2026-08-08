@@ -8,7 +8,7 @@ using System;
 
 namespace Application.Features.Auth.Commands;
 
-public record LogoutCommand(Guid UserId, string? AccessToken, string? RefreshToken)
+public record LogoutCommand(string? AccessToken, string? RefreshToken)
     : IRequest<Result>;
 
 public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>

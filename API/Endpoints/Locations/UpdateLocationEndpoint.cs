@@ -66,7 +66,7 @@ public class UpdateLocationEndpoint : Endpoint<UpdateLocationRequest, LocationRe
     public override void Configure()
     {
         Put("/api/locations/{id}");
-        Authorize(Roles = "Admin");
+        Roles("Admin");
         Summary(s =>
         {
             s.Summary = "Update an existing Location in SQL Server";

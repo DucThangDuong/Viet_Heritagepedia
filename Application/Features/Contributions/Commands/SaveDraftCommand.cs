@@ -42,12 +42,13 @@ public class SaveDraftCommandHandler : IRequestHandler<SaveDraftCommand, Result<
     public async Task<Result<SaveDraftResponse>> Handle(SaveDraftCommand request, CancellationToken ct)
     {
         string mongoId;
+        var rawContent = request.Content.GetRawText();
 
         if (request.ContributionId is null)
         {
             var mongoDoc = HeritageDetailDocument.CreateCommunityArticle(
                 locationId: request.LocationId.ToString(),
-                contentHtml: request.Content.GetRawText()
+                contentHtml: rawContent
             );
             await _mongoRepo.InsertAsync(mongoDoc);
             mongoId = mongoDoc.Id;
@@ -84,7 +85,7 @@ public class SaveDraftCommandHandler : IRequestHandler<SaveDraftCommand, Result<
             {
                 existingDoc = HeritageDetailDocument.CreateCommunityArticle(
                     locationId: contribution.LocationId.ToString(),
-                    contentHtml: request.Content.GetRawText()
+                    contentHtml: rawContent
                 );
                 await _mongoRepo.InsertAsync(existingDoc);
                 mongoId = existingDoc.Id;
@@ -97,10 +98,17 @@ public class SaveDraftCommandHandler : IRequestHandler<SaveDraftCommand, Result<
             contribution.UpdateContent(
                 title: request.Title,
                 summary: request.Summary,
-                noSqlDocumentId: null
+                noSqlDocumentId: mongoId
             );
             _contributionRepo.Update(contribution);
-            await _unitOfWork.SaveChangesAsync(ct);
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
+            catch (Exception ex) when (ex.GetType().Name.Contains("ConcurrencyException"))
+            {
+                return Result<SaveDraftResponse>.Failure("ERR_CONCURRENCY_CONFLICT", 409);
+            }
 
             return Result<SaveDraftResponse>.Success(
                 new SaveDraftResponse { ContributionId = contribution.Id, MongoDocumentId = mongoId },

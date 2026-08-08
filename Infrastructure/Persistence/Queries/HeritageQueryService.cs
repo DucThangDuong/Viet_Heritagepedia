@@ -61,10 +61,6 @@ public class HeritageQueryService : IHeritageQueryService
     public async Task<HeritageDetailDto?> GetBySlugAsync(string slug, CancellationToken ct = default)
     {
         var connection = _sqlContext.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         // 1. Fetch SQL Location
         const string locationSql = @"
@@ -177,10 +173,6 @@ public class HeritageQueryService : IHeritageQueryService
     public async Task<UserArticleDto?> GetUserArticleByIdAsync(Guid id, CancellationToken ct = default)
     {
         var connection = _sqlContext.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         const string sql = @"
             SELECT c.Id, l.Slug as HeritageId, c.Title, u.FullName as AuthorName, u.Role as AuthorRole, u.AvatarUrl as AuthorAvatar, c.CreatedAt, c.Summary, c.LikesCount, c.NoSqlDocumentId 
@@ -220,8 +212,7 @@ public class HeritageQueryService : IHeritageQueryService
                 }
                 if (doc.Blocks != null)
                 {
-                    var jsonStr = doc.Blocks.ToJson();
-                    dto.Blocks = System.Text.Json.JsonSerializer.Deserialize<object>(jsonStr);
+                    dto.Blocks = doc.Blocks.Select(b => MongoDB.Bson.BsonTypeMapper.MapToDotNetValue(b)).ToList();
                 }
             }
         }

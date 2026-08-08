@@ -1,4 +1,6 @@
+using API.DTOs;
 using API.Extensions;
+using FluentValidation;
 using Application.Common;
 using Application.DTOs;
 using Application.Interfaces.QueryServices;
@@ -6,7 +8,20 @@ using FastEndpoints;
 
 namespace API.Endpoints.Articles;
 
-public class GetUserArticleEndpoint : EndpointWithoutRequest<UserArticleDto>
+public class GetUserArticleRequest
+{
+    public Guid Id { get; set; }
+}
+
+public class GetUserArticleRequestValidator : Validator<GetUserArticleRequest>
+{
+    public GetUserArticleRequestValidator()
+    {
+        RuleFor(x => x.Id).NotEmpty().WithMessage("ERR_INVALID_ID");
+    }
+}
+
+public class GetUserArticleEndpoint : Endpoint<GetUserArticleRequest, ApiSuccessResponse<UserArticleDto>>
 {
     private readonly IHeritageQueryService _queryService;
 
@@ -19,6 +34,7 @@ public class GetUserArticleEndpoint : EndpointWithoutRequest<UserArticleDto>
     {
         Get("/api/user-articles/{id}");
         AllowAnonymous();
+        Options(x => x.RequireRateLimiting("public_strict"));
         Summary(s =>
         {
             s.Summary = "Get rich user article document with JSON blocks from MongoDB";
@@ -26,17 +42,9 @@ public class GetUserArticleEndpoint : EndpointWithoutRequest<UserArticleDto>
         });
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(GetUserArticleRequest req, CancellationToken ct)
     {
-        var idStr = Route<string>("id");
-        if (string.IsNullOrEmpty(idStr) || !Guid.TryParse(idStr, out var id))
-        {
-            var fail = Result<UserArticleDto>.Failure("ERR_INVALID_ID", 400);
-            await this.SendApiResponseAsync(fail, ct);
-            return;
-        }
-
-        var article = await _queryService.GetUserArticleByIdAsync(id, ct);
+        var article = await _queryService.GetUserArticleByIdAsync(req.Id, ct);
 
         if (article == null)
         {

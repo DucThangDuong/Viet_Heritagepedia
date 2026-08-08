@@ -32,7 +32,7 @@ public class SaveLocationArticleEndpoint : Endpoint<SaveLocationArticleRequest, 
     public override void Configure()
     {
         Post("/api/locations/{id}/article");
-        Authorize(Roles = "Admin")
+        Roles("Admin");
         Summary(s =>
         {
             s.Summary = "Save main article content for a Location (Manager)";

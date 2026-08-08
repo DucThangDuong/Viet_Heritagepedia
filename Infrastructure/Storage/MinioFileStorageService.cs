@@ -96,4 +96,21 @@ public class MinioFileStorageService : IFileStorageService
         await _s3Client.PutObjectAsync(putRequest, ct);
         return targetFileName; 
     }
+
+    public async Task DeleteFileAsync(string targetFileName, CancellationToken ct = default)
+    {
+        try
+        {
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = targetFileName
+            };
+            await _s3Client.DeleteObjectAsync(deleteRequest, ct);
+        }
+        catch
+        {
+            // Ignore if already deleted or doesn't exist
+        }
+    }
 }

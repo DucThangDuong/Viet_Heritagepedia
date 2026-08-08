@@ -27,31 +27,25 @@ public class ContributionQueryService : IContributionQueryService
         _collection = mongoContext.GetCollection<HeritageDetailDocument>();
     }
 
-    public async Task<IEnumerable<MyContributionListDto>> GetMyContributionsAsync(Guid authorId, CancellationToken ct = default)
+    public async Task<IEnumerable<MyContributionListDto>> GetMyContributionsAsync(Guid authorId, int pageIndex = 1, int pageSize = 50, CancellationToken ct = default)
     {
         var connection = _sqlContext.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         const string sql = @"
             SELECT c.Id, c.LocationId, l.Name as LocationName, c.Title, c.Summary, c.WorkflowState, c.CreatedAt, c.UpdatedAt
             FROM Contributions c
             LEFT JOIN Locations l ON c.LocationId = l.Id
             WHERE c.AuthorId = @AuthorId
-            ORDER BY c.UpdatedAt DESC";
+            ORDER BY c.UpdatedAt DESC
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
-        return await connection.QueryAsync<MyContributionListDto>(sql, new { AuthorId = authorId });
+        var offset = (pageIndex - 1) * pageSize;
+        return await connection.QueryAsync<MyContributionListDto>(sql, new { AuthorId = authorId, Offset = offset, PageSize = pageSize });
     }
 
     public async Task<MyContributionDetailDto?> GetMyContributionDetailAsync(Guid authorId, Guid contributionId, CancellationToken ct = default)
     {
         var connection = _sqlContext.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         const string sql = @"
             SELECT c.Id, c.LocationId, l.Name as LocationName, c.Title, c.Summary, c.WorkflowState, c.CreatedAt, c.UpdatedAt, c.NoSqlDocumentId
@@ -85,39 +79,32 @@ public class ContributionQueryService : IContributionQueryService
                 dto.ContentHtml = doc.ContentHtml ?? string.Empty;
                 if (doc.Blocks != null)
                 {
-                    var jsonStr = doc.Blocks.ToJson();
-                    dto.Blocks = System.Text.Json.JsonSerializer.Deserialize<object>(jsonStr);
+                    dto.Blocks = doc.Blocks.Select(b => MongoDB.Bson.BsonTypeMapper.MapToDotNetValue(b)).ToList();
                 }
             }
         }
 
         return dto;
     }
-
-    public async Task<IEnumerable<MyContributionListDto>> GetAllContributionsAsync(CancellationToken ct = default)
+    // Admin 
+    public async Task<IEnumerable<MyContributionListDto>> GetAllContributionsAsync(int pageIndex = 1, int pageSize = 50, CancellationToken ct = default)
     {
         var connection = _sqlContext.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         const string sql = @"
             SELECT c.Id, c.LocationId, l.Name as LocationName, c.Title, c.Summary, c.WorkflowState, c.CreatedAt, c.UpdatedAt
             FROM Contributions c
             LEFT JOIN Locations l ON c.LocationId = l.Id
-            ORDER BY c.UpdatedAt DESC";
+            ORDER BY c.UpdatedAt DESC
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
-        return await connection.QueryAsync<MyContributionListDto>(sql);
+        var offset = (pageIndex - 1) * pageSize;
+        return await connection.QueryAsync<MyContributionListDto>(sql, new { Offset = offset, PageSize = pageSize });
     }
 
     public async Task<MyContributionDetailDto?> GetContributionDetailAsync(Guid contributionId, CancellationToken ct = default)
     {
         var connection = _sqlContext.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(ct);
-        }
 
         const string sql = @"
             SELECT c.Id, c.LocationId, l.Name as LocationName, c.Title, c.Summary, c.WorkflowState, c.CreatedAt, c.UpdatedAt, c.NoSqlDocumentId
@@ -151,8 +138,7 @@ public class ContributionQueryService : IContributionQueryService
                 dto.ContentHtml = doc.ContentHtml ?? string.Empty;
                 if (doc.Blocks != null)
                 {
-                    var jsonStr = doc.Blocks.ToJson();
-                    dto.Blocks = System.Text.Json.JsonSerializer.Deserialize<object>(jsonStr);
+                    dto.Blocks = doc.Blocks.Select(b => MongoDB.Bson.BsonTypeMapper.MapToDotNetValue(b)).ToList();
                 }
             }
         }

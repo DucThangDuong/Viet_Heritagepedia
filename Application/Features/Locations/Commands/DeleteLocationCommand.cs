@@ -34,7 +34,14 @@ public class DeleteLocationCommandHandler : IRequestHandler<DeleteLocationComman
         entity.Deactivate();
 
         _locationRepository.Update(entity);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex.GetType().Name.Contains("ConcurrencyException"))
+        {
+            return Result<bool>.Failure("ERR_CONCURRENCY_CONFLICT", 409);
+        }
 
         return Result<bool>.Success(true, 200);
     }

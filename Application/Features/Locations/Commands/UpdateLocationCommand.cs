@@ -66,7 +66,14 @@ public class UpdateLocationCommandHandler : IRequestHandler<UpdateLocationComman
         );
 
         _locationRepository.Update(entity);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex.GetType().Name.Contains("ConcurrencyException"))
+        {
+            return Result<LocationResponseDto>.Failure("ERR_CONCURRENCY_CONFLICT", 409);
+        }
 
         var dto = new LocationResponseDto
         {

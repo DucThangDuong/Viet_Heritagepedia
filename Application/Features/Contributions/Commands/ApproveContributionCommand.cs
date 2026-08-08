@@ -48,7 +48,14 @@ public class ApproveContributionCommandHandler : IRequestHandler<ApproveContribu
             }
 
             _contributionRepo.Update(contribution);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex.GetType().Name.Contains("ConcurrencyException"))
+            {
+                return Result<Guid>.Failure("ERR_CONCURRENCY_CONFLICT", 409);
+            }
             return Result<Guid>.Success(contribution.Id);
         }
         catch (InvalidOperationException ex)

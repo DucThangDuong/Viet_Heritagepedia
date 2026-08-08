@@ -25,7 +25,7 @@ public class DeleteLocationEndpoint : Endpoint<DeleteLocationRequest, bool>
     public override void Configure()
     {
         Delete("/api/locations/{id}");
-        Authorize(Roles = "Admin")
+        Roles("Admin");
         Summary(s =>
         {
             s.Summary = "Soft delete a Location in SQL Server";

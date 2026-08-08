@@ -8,7 +8,12 @@ using FastEndpoints;
 
 namespace API.Endpoints.Heritage;
 
-public class GetHeritageDetailEndpoint : EndpointWithoutRequest<HeritageDetailDto>
+public class GetHeritageDetailRequest
+{
+    public string Slug { get; set; } = string.Empty;
+}
+
+public class GetHeritageDetailEndpoint : Endpoint<GetHeritageDetailRequest, HeritageDetailDto>
 {
     private readonly IHeritageQueryService _queryService;
 
@@ -21,6 +26,7 @@ public class GetHeritageDetailEndpoint : EndpointWithoutRequest<HeritageDetailDt
     {
         Get("/api/heritage-details/{slug}");
         AllowAnonymous();
+        Options(x => x.RequireRateLimiting("public_strict"));
         Summary(s =>
         {
             s.Summary = "Get aggregated heritage detail (SQL + MongoDB)";
@@ -28,17 +34,9 @@ public class GetHeritageDetailEndpoint : EndpointWithoutRequest<HeritageDetailDt
         });
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(GetHeritageDetailRequest req, CancellationToken ct)
     {
-        var slug = Route<string>("slug");
-        if (string.IsNullOrEmpty(slug))
-        {
-            var invalidResult = Result<HeritageDetailDto>.Failure("ERR_INVALID_SLUG", 400);
-            await this.SendApiResponseAsync(invalidResult, ct);
-            return;
-        }
-
-        var dto = await _queryService.GetBySlugAsync(slug, ct);
+        var dto = await _queryService.GetBySlugAsync(req.Slug, ct);
 
         if (dto == null)
         {
